@@ -42,6 +42,17 @@ export async function ecfrFetch(path: string): Promise<unknown> {
   return response.text()
 }
 
+let _latestDateCache: string | null = null
+
+export async function latestDate(title: string): Promise<string> {
+  if (_latestDateCache) return _latestDateCache
+  const data = await ecfrFetch('/api/versioner/v1/titles') as { titles: { number: number; latest_issue_date: string }[] }
+  const t = data.titles.find(t => String(t.number) === String(title))
+  const date = t?.latest_issue_date ?? new Date(Date.now() - 172_800_000).toISOString().slice(0, 10)
+  _latestDateCache = date
+  return date
+}
+
 export async function ecfrFetchXml(path: string): Promise<string> {
   const url = `${BASE_URL}${path}`
 

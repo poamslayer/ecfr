@@ -21,7 +21,7 @@ export async function searchAction(
   globalOpts: { json?: boolean },
 ): Promise<void> {
   const params = new URLSearchParams({ query })
-  if (opts.title) params.set('title', opts.title)
+  if (opts.title) params.set('hierarchy[title]', opts.title)
   if (opts.agency) params.set('agency', opts.agency)
   if (opts.page) params.set('page', opts.page)
   if (opts.perPage) params.set('per_page', opts.perPage)

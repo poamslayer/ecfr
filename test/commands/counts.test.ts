@@ -22,16 +22,23 @@ describe('countsAction', () => {
 
   it('fetches counts with query and optional agency filter', async () => {
     const data = {
-      meta: { total_count: 120 },
-      count: {
-        '32': { count: 45, children: { 'I': { count: 30, children: {} } } },
-      },
+      count: { value: 120, relation: 'eq' },
+      max_score: 1,
+      children: [
+        {
+          level: 'title', hierarchy: '32', hierarchy_heading: 'Title 32', heading: 'National Defense',
+          count: 45, max_score: 1,
+          children: [
+            { level: 'chapter', hierarchy: 'I', hierarchy_heading: 'Chapter I', heading: null, count: 30, max_score: 1 },
+          ],
+        },
+      ],
     }
     mockFetch.mockResolvedValueOnce(data)
 
     await countsAction('cybersecurity', { agency: 'defense-department' }, { json: true })
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/search/v1/counts?query=cybersecurity')
+      expect.stringContaining('/api/search/v1/counts/hierarchy?query=cybersecurity')
     )
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('agency=defense-department')
@@ -44,10 +51,17 @@ describe('countsAction', () => {
     Object.defineProperty(process.stdout, 'isTTY', { value: true, writable: true })
 
     const data = {
-      meta: { total_count: 45 },
-      count: {
-        '32': { count: 45, children: { 'I': { count: 30, children: {} } } },
-      },
+      count: { value: 45, relation: 'eq' },
+      max_score: 1,
+      children: [
+        {
+          level: 'title', hierarchy: '32', hierarchy_heading: 'Title 32', heading: 'National Defense',
+          count: 45, max_score: 1,
+          children: [
+            { level: 'chapter', hierarchy: 'I', hierarchy_heading: 'Chapter I', heading: null, count: 30, max_score: 1 },
+          ],
+        },
+      ],
     }
     mockFetch.mockResolvedValueOnce(data)
 

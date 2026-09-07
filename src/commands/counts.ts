@@ -3,13 +3,19 @@ import { ecfrFetch } from '../api.js'
 import { shouldOutputJson, output } from '../formatter.js'
 
 interface CountNode {
+  level: string
+  hierarchy: string | null
+  hierarchy_heading: string | null
+  heading: string | null
   count: number
-  children: Record<string, CountNode>
+  max_score: number
+  children?: CountNode[]
 }
 
 interface CountsResponse {
-  meta: { total_count: number }
-  count: Record<string, CountNode>
+  count: { value: number; relation: string }
+  max_score: number
+  children: CountNode[]
 }
 
 export async function countsAction(
@@ -20,7 +26,7 @@ export async function countsAction(
   const params = new URLSearchParams({ query })
   if (opts.agency) params.set('agency', opts.agency)
 
-  const data = await ecfrFetch(`/api/search/v1/counts?${params}`) as CountsResponse
+  const data = await ecfrFetch(`/api/search/v1/counts/hierarchy?${params}`) as CountsResponse
   const asJson = shouldOutputJson(globalOpts)
 
   if (asJson) {
@@ -29,26 +35,27 @@ export async function countsAction(
   }
 
   const lines: string[] = []
-  lines.push(chalk.bold(`Total: ${data.meta.total_count} results`))
+  lines.push(chalk.bold(`Total: ${data.count.value} results`))
   lines.push('')
 
-  renderCountTree(data.count, lines, 0, 'Title')
+  renderCountTree(data.children, lines, 0)
 
   output(data, lines.join('\n'), false)
 }
 
 function renderCountTree(
-  node: Record<string, CountNode>,
+  nodes: CountNode[],
   lines: string[],
   depth: number,
-  prefix: string,
 ): void {
   const indent = '  '.repeat(depth)
-  for (const [key, value] of Object.entries(node)) {
-    lines.push(`${indent}${prefix} ${key}: ${chalk.yellow(String(value.count))}`)
-    if (value.children && Object.keys(value.children).length > 0) {
-      const childPrefix = depth === 0 ? 'Chapter' : 'Part'
-      renderCountTree(value.children, lines, depth + 1, childPrefix)
+  for (const node of nodes) {
+    const label = node.heading
+      ? `${node.hierarchy_heading ?? node.hierarchy ?? node.level} — ${node.heading}`
+      : (node.hierarchy_heading ?? node.hierarchy ?? node.level)
+    lines.push(`${indent}${label}: ${chalk.yellow(String(node.count))}`)
+    if (node.children && node.children.length > 0) {
+      renderCountTree(node.children, lines, depth + 1)
     }
   }
 }
