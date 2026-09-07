@@ -38,7 +38,7 @@ describe('searchAction', () => {
       expect.stringContaining('/api/search/v1/results?query=CUI')
     )
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('title=32')
+      expect.stringContaining('hierarchy%5Btitle%5D=32')
     )
   })
 

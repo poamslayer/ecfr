@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { ecfrFetchXml } from '../api.js'
+import { ecfrFetchXml, latestDate } from '../api.js'
 import { shouldOutputJson, output } from '../formatter.js'
 import { xmlToText } from '../xml-parser.js'
 
@@ -8,7 +8,7 @@ export async function readAction(
   opts: { part?: string; section?: string; date?: string; xml?: boolean },
   globalOpts: { json?: boolean },
 ): Promise<void> {
-  const date = opts.date ?? new Date().toISOString().slice(0, 10)
+  const date = opts.date ?? await latestDate(title)
 
   let path = `/api/versioner/v1/full/${date}/title-${title}.xml`
   const params = new URLSearchParams()

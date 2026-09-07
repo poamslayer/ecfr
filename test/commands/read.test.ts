@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 vi.mock('../../src/api.js', () => ({
   ecfrFetchXml: vi.fn(),
+  latestDate: vi.fn(),
 }))
 
-import { ecfrFetchXml } from '../../src/api.js'
+import { ecfrFetchXml, latestDate } from '../../src/api.js'
 import { readAction } from '../../src/commands/read.js'
 
 describe('readAction', () => {
@@ -13,6 +14,7 @@ describe('readAction', () => {
 
   beforeEach(() => {
     logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    vi.mocked(latestDate).mockResolvedValue('2026-04-01')
   })
 
   afterEach(() => {
@@ -34,6 +36,8 @@ describe('readAction', () => {
     mockFetchXml.mockResolvedValueOnce(xml)
 
     await readAction('32', { xml: true }, { json: false })
+    expect(latestDate).toHaveBeenCalledWith('32')
+    expect(mockFetchXml).toHaveBeenCalledWith('/api/versioner/v1/full/2026-04-01/title-32.xml')
     expect(logSpy).toHaveBeenCalledWith(xml)
   })
 

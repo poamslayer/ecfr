@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { ecfrFetch } from '../api.js'
+import { ecfrFetch, latestDate } from '../api.js'
 import { shouldOutputJson, output } from '../formatter.js'
 
 interface StructureNode {
@@ -14,7 +14,7 @@ export async function structureAction(
   opts: { date?: string },
   globalOpts: { json?: boolean },
 ): Promise<void> {
-  const date = opts.date ?? new Date().toISOString().slice(0, 10)
+  const date = opts.date ?? await latestDate(title)
   const data = await ecfrFetch(`/api/versioner/v1/structure/${date}/title-${title}.json`) as StructureNode
   const asJson = shouldOutputJson(globalOpts)
 
