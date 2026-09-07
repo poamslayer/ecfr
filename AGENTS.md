@@ -4,7 +4,7 @@
 
 ### Issue tracker
 
-Issues live in GitHub Issues for `arnoldadlv/ecfr`, driven by the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues live in GitHub Issues for `poamslayer/ecfr`, driven by the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
