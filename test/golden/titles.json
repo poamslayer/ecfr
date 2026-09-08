@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "version": "0.2.0",
+  "operation": "titles",
+  "params": {},
+  "defaulted": [],
+  "warnings": [],
+  "source": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/titles",
+    "fetched_at": "<fetched_at>"
+  },
+  "dry_run": false,
+  "data": {
+    "keys": [
+      "titles",
+      "meta"
+    ]
+  }
+}

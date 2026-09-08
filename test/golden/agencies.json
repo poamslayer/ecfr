@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "version": "0.2.0",
+  "operation": "agencies",
+  "params": {},
+  "defaulted": [],
+  "warnings": [],
+  "source": {
+    "url": "https://www.ecfr.gov/api/admin/v1/agencies.json",
+    "fetched_at": "<fetched_at>"
+  },
+  "dry_run": false,
+  "data": {
+    "keys": [
+      "total",
+      "matched",
+      "agencies"
+    ]
+  }
+}

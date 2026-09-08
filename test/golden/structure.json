@@ -1,0 +1,33 @@
+{
+  "ok": true,
+  "version": "0.2.0",
+  "operation": "structure",
+  "params": {
+    "date": "2026-08-17",
+    "title": "32"
+  },
+  "defaulted": [],
+  "warnings": [],
+  "source": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/structure/2026-08-17/title-32.json",
+    "fetched_at": "<fetched_at>"
+  },
+  "currency": {
+    "date": "2026-08-17",
+    "latest_amended_on": "2026-08-17",
+    "up_to_date_as_of": "2026-09-03"
+  },
+  "dry_run": false,
+  "data": {
+    "keys": [
+      "identifier",
+      "label",
+      "label_level",
+      "label_description",
+      "reserved",
+      "type",
+      "size",
+      "children"
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "ok": true,
+  "version": "0.2.0",
+  "operation": "search",
+  "params": {
+    "title": "32",
+    "perPage": 5,
+    "query": "controlled unclassified information"
+  },
+  "defaulted": [],
+  "warnings": [],
+  "source": {
+    "url": "https://www.ecfr.gov/api/search/v1/results?query=controlled+unclassified+information&hierarchy%5Btitle%5D=32&per_page=5",
+    "fetched_at": "<fetched_at>"
+  },
+  "pagination": {
+    "page": 1,
+    "per_page": 5,
+    "total": 117,
+    "total_pages": 24,
+    "next": "ecfr search 'controlled unclassified information' --title 32 --page 2 --per-page 5"
+  },
+  "dry_run": false,
+  "data": {
+    "keys": [
+      "results",
+      "meta"
+    ]
+  }
+}

@@ -7,14 +7,14 @@ interface StructureNode {
   identifier: string
   label: string
   label_description?: string
-  children: StructureNode[]
+  children?: StructureNode[]
 }
 
 const structureNodeSchema: z.ZodType<StructureNode> = z.lazy(() => z.looseObject({
   identifier: z.string(),
   label: z.string(),
   label_description: z.string().optional(),
-  children: z.array(structureNodeSchema),
+  children: z.array(structureNodeSchema).optional(),
 }))
 
 function renderTree(node: StructureNode, lines: string[], depth: number): void {

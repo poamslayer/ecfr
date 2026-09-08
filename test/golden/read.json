@@ -1,0 +1,30 @@
+{
+  "ok": true,
+  "version": "0.2.0",
+  "operation": "read",
+  "params": {
+    "part": "2002",
+    "section": "2002.14",
+    "date": "2026-08-17",
+    "title": "32"
+  },
+  "defaulted": [],
+  "warnings": [],
+  "source": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-08-17/title-32.xml?part=2002&section=2002.14",
+    "fetched_at": "<fetched_at>"
+  },
+  "currency": {
+    "date": "2026-08-17",
+    "latest_amended_on": "2026-08-17",
+    "up_to_date_as_of": "2026-09-03"
+  },
+  "dry_run": false,
+  "data": {
+    "keys": [
+      "title",
+      "date",
+      "content"
+    ]
+  }
+}

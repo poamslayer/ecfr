@@ -1,0 +1,27 @@
+{
+  "ok": true,
+  "version": "0.2.0",
+  "operation": "changes",
+  "params": {
+    "part": "2002",
+    "title": "32"
+  },
+  "defaulted": [],
+  "warnings": [],
+  "source": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/versions/title-32?part=2002",
+    "fetched_at": "<fetched_at>"
+  },
+  "currency": {
+    "date": "2026-08-17",
+    "latest_amended_on": "2026-08-17",
+    "up_to_date_as_of": "2026-09-03"
+  },
+  "dry_run": false,
+  "data": {
+    "keys": [
+      "content_versions",
+      "meta"
+    ]
+  }
+}

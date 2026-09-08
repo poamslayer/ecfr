@@ -314,8 +314,7 @@
         },
         "required": [
           "identifier",
-          "label",
-          "children"
+          "label"
         ],
         "additionalProperties": {}
       }
