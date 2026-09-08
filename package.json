@@ -9,6 +9,9 @@
   "scripts": {
     "build": "tsup src/cli.ts --format esm",
     "dev": "tsx src/cli.ts",
+    "generate": "tsx scripts/generate.ts",
+    "generate:check": "tsx scripts/generate.ts --check",
+    "fixtures:record": "tsx scripts/record-fixtures.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

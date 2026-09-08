@@ -40,7 +40,7 @@ export const flags = {
   date: {
     name: 'date',
     value: '<date>',
-    description: 'Issue date as YYYY-MM-DD. Defaults to the latest issue date the eCFR publishes for the title.',
+    description: 'Issue date as YYYY-MM-DD.',
     schema: isoDate,
   },
   part: {
