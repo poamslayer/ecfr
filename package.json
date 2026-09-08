@@ -1,6 +1,6 @@
 {
   "name": "@poamslayer/ecfr",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "CLI for the Electronic Code of Federal Regulations (eCFR) API",
   "type": "module",
   "bin": {
@@ -25,7 +25,8 @@
   ],
   "license": "MIT",
   "files": [
-    "dist"
+    "dist",
+    "skills"
   ],
   "repository": {
     "type": "git",

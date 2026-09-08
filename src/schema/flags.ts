@@ -27,7 +27,7 @@ export const flags = {
   },
   dryRun: {
     name: 'dry-run',
-    description: 'Build the request and return the envelope without contacting ecfr.gov.',
+    description: 'Resolve the request and return the envelope without fetching the data. Only the small title list is read, to resolve a defaulted date.',
     schema: z.boolean().default(false),
     global: true,
   },
@@ -35,7 +35,7 @@ export const flags = {
     name: 'title',
     value: '<n>',
     description: 'CFR title number.',
-    schema: z.string().regex(/^\d{1,2}$/, 'expected a title number 1-50'),
+    schema: z.string().regex(/^\d+$/, 'expected a numeric CFR title'),
   },
   date: {
     name: 'date',

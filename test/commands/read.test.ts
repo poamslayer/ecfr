@@ -1,58 +1,46 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { runOperation } from '../../src/runtime/run.js'
+import { read } from '../../src/schema/ops/read.js'
 
-vi.mock('../../src/api.js', () => ({
-  ecfrFetchXml: vi.fn(),
-  latestDate: vi.fn(),
-}))
+const currency = {
+  titles: [{ number: 32, latest_issue_date: '2026-04-01', latest_amended_on: '2026-03-30', up_to_date_as_of: '2026-04-01' }],
+}
 
-import { ecfrFetchXml, latestDate } from '../../src/api.js'
-import { readAction } from '../../src/commands/read.js'
+describe('read operation', () => {
+  it('defaults the issue date and transforms XML into data', async () => {
+    const xml = '<SECTION><SECTNO>§ 2002.14</SECTNO><P>CUI rules</P></SECTION>'
+    const fetch = vi.fn(async input => String(input).endsWith('/titles')
+      ? new Response(JSON.stringify(currency), { headers: { 'content-type': 'application/json' } })
+      : new Response(xml, { headers: { 'content-type': 'application/xml' } })) as typeof globalThis.fetch
 
-describe('readAction', () => {
-  let logSpy: ReturnType<typeof vi.spyOn>
-  const mockFetchXml = vi.mocked(ecfrFetchXml)
+    const result = await runOperation(read, { title: '32', part: '2002', section: '2002.14' }, { fetch })
 
-  beforeEach(() => {
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    vi.mocked(latestDate).mockResolvedValue('2026-04-01')
+    if (!result.envelope.ok) throw new Error('expected success')
+    expect(result.envelope.data).toMatchObject({ title: '32', date: '2026-04-01' })
+    expect((result.envelope.data as { content: string }).content).toContain('CUI rules')
+    expect(result.envelope.defaulted).toEqual(['date'])
+    expect(result.envelope.source?.url).toBe('https://www.ecfr.gov/api/versioner/v1/full/2026-04-01/title-32.xml?part=2002&section=2002.14')
   })
 
-  afterEach(() => {
-    logSpy.mockRestore()
-    vi.clearAllMocks()
-  })
-
-  it('fetches XML with correct path and params', async () => {
-    mockFetchXml.mockResolvedValueOnce('<SECTION><P>Test</P></SECTION>')
-
-    await readAction('32', { part: '2002', section: '2002.14', date: '2026-04-01' }, { json: true })
-    expect(mockFetchXml).toHaveBeenCalledWith(
-      '/api/versioner/v1/full/2026-04-01/title-32.xml?part=2002&section=2002.14'
-    )
-  })
-
-  it('outputs raw XML when --xml flag is set', async () => {
+  it('sets raw output to the upstream XML when requested', async () => {
     const xml = '<SECTION><P>Raw XML</P></SECTION>'
-    mockFetchXml.mockResolvedValueOnce(xml)
+    const fetch = vi.fn(async input => String(input).endsWith('/titles')
+      ? new Response(JSON.stringify(currency), { headers: { 'content-type': 'application/json' } })
+      : new Response(xml, { headers: { 'content-type': 'application/xml' } })) as typeof globalThis.fetch
 
-    await readAction('32', { xml: true }, { json: false })
-    expect(latestDate).toHaveBeenCalledWith('32')
-    expect(mockFetchXml).toHaveBeenCalledWith('/api/versioner/v1/full/2026-04-01/title-32.xml')
-    expect(logSpy).toHaveBeenCalledWith(xml)
+    const result = await runOperation(read, { title: '32', date: '2026-04-01', xml: true }, { fetch })
+    expect(result.raw).toBe(xml)
+    expect(result.exit_code).toBe(0)
   })
 
-  it('outputs parsed text for human mode', async () => {
-    const originalIsTTY = process.stdout.isTTY
-    Object.defineProperty(process.stdout, 'isTTY', { value: true, writable: true })
-
-    mockFetchXml.mockResolvedValueOnce('<SECTION><SECTNO>§ 2002.14</SECTNO><P>CUI rules</P></SECTION>')
-
-    await readAction('32', { date: '2026-04-01' }, { json: false })
-    // Should have two log calls: title header + empty line, then parsed text
-    const allOutput = logSpy.mock.calls.map(c => c[0]).join('\n')
-    expect(allOutput).toContain('§ 2002.14')
-    expect(allOutput).toContain('CUI rules')
-
-    Object.defineProperty(process.stdout, 'isTTY', { value: originalIsTTY, writable: true })
+  it('returns a dry run envelope without fetching the regulation XML', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(currency), {
+      headers: { 'content-type': 'application/json' },
+    })) as typeof globalThis.fetch
+    const result = await runOperation(read, { title: '32' }, { fetch, dryRun: true })
+    if (!result.envelope.ok) throw new Error('expected success')
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(result.envelope.dry_run).toBe(true)
+    expect(result.envelope.data).toBeNull()
   })
 })

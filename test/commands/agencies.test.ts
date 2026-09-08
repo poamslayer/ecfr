@@ -1,50 +1,34 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { runOperation } from '../../src/runtime/run.js'
+import { agencies } from '../../src/schema/ops/agencies.js'
 
-vi.mock('../../src/api.js', () => ({
-  ecfrFetch: vi.fn(),
-}))
+const data = {
+  agencies: [
+    { name: 'Department of Defense', short_name: 'DOD', slug: 'defense-department', cfr_references: [{ title: 32, chapter: 'I' }], children: [] },
+    { name: 'Environmental Protection Agency', short_name: 'EPA', slug: 'epa', cfr_references: [], children: [] },
+  ],
+}
 
-import { ecfrFetch } from '../../src/api.js'
-import { agenciesAction } from '../../src/commands/agencies.js'
+describe('agencies operation', () => {
+  it('reports total and matched counts when filtering', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(data), {
+      headers: { 'content-type': 'application/json' },
+    })) as typeof globalThis.fetch
 
-describe('agenciesAction', () => {
-  let logSpy: ReturnType<typeof vi.spyOn>
-  const mockFetch = vi.mocked(ecfrFetch)
+    const result = await runOperation(agencies, { filter: 'defense' }, { fetch })
 
-  beforeEach(() => {
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    expect(result.envelope.ok).toBe(true)
+    if (!result.envelope.ok) return
+    expect(result.envelope.data).toEqual({ total: 2, matched: 1, agencies: [data.agencies[0]] })
+    expect(result.envelope.source?.url).toBe('https://www.ecfr.gov/api/admin/v1/agencies.json')
   })
 
-  afterEach(() => {
-    logSpy.mockRestore()
-    vi.clearAllMocks()
-  })
-
-  it('fetches and outputs agencies as JSON', async () => {
-    const data = {
-      agencies: [
-        { name: 'Department of Defense', short_name: 'DOD', slug: 'defense-department', cfr_references: [{ title: 32, chapter: 'I' }], children: [] },
-      ],
-    }
-    mockFetch.mockResolvedValueOnce(data)
-
-    await agenciesAction({}, { json: true })
-    expect(mockFetch).toHaveBeenCalledWith('/api/admin/v1/agencies.json')
-    expect(logSpy).toHaveBeenCalledWith(JSON.stringify(data, null, 2))
-  })
-
-  it('filters agencies by name', async () => {
-    const data = {
-      agencies: [
-        { name: 'Department of Defense', short_name: 'DOD', slug: 'defense-department', cfr_references: [], children: [] },
-        { name: 'Environmental Protection Agency', short_name: 'EPA', slug: 'epa', cfr_references: [], children: [] },
-      ],
-    }
-    mockFetch.mockResolvedValueOnce(data)
-
-    await agenciesAction({ filter: 'defense' }, { json: false })
-    const outputText = logSpy.mock.calls[0][0] as string
-    expect(outputText).toContain('Department of Defense')
-    expect(outputText).not.toContain('Environmental Protection')
+  it('sets matched equal to total without a filter', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(data), {
+      headers: { 'content-type': 'application/json' },
+    })) as typeof globalThis.fetch
+    const result = await runOperation(agencies, {}, { fetch })
+    if (!result.envelope.ok) throw new Error('expected success')
+    expect(result.envelope.data).toMatchObject({ total: 2, matched: 2 })
   })
 })

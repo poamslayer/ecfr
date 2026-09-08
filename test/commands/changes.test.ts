@@ -1,71 +1,33 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { runOperation } from '../../src/runtime/run.js'
+import { changes } from '../../src/schema/ops/changes.js'
 
-vi.mock('../../src/api.js', () => ({
-  ecfrFetch: vi.fn(),
-}))
-
-import { ecfrFetch } from '../../src/api.js'
-import { changesAction } from '../../src/commands/changes.js'
-
-describe('changesAction', () => {
-  let logSpy: ReturnType<typeof vi.spyOn>
-  const mockFetch = vi.mocked(ecfrFetch)
-
-  beforeEach(() => {
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-  })
-
-  afterEach(() => {
-    logSpy.mockRestore()
-    vi.clearAllMocks()
-  })
-
-  it('fetches versions for a title with optional filters', async () => {
+describe('changes operation', () => {
+  it('returns changes and title currency with optional filters', async () => {
     const data = {
       content_versions: [{
-        date: '2026-03-15',
-        amendment_date: '2026-03-10',
-        identifier: 'title-32',
-        name: 'National Defense',
-        part: '2002',
-        substantive: true,
+        date: '2026-03-15', amendment_date: '2026-03-10', identifier: 'title-32',
+        name: 'National Defense', part: '2002', substantive: true,
       }],
     }
-    mockFetch.mockResolvedValueOnce(data)
-
-    await changesAction('32', { part: '2002', since: '2025-01-01' }, { json: true })
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/versioner/v1/versions/title-32')
-    )
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('part=2002')
-    )
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('issue_date%5Bgte%5D=2025-01-01')
-    )
-  })
-
-  it('renders human table output', async () => {
-    const originalIsTTY = process.stdout.isTTY
-    Object.defineProperty(process.stdout, 'isTTY', { value: true, writable: true })
-
-    const data = {
-      content_versions: [{
-        date: '2026-03-15',
-        amendment_date: '2026-03-10',
-        identifier: 'title-32',
-        name: 'National Defense',
-        part: '2002',
-        substantive: true,
-      }],
+    const titles = {
+      titles: [{ number: 32, latest_issue_date: '2026-04-01', latest_amended_on: '2026-03-30', up_to_date_as_of: '2026-04-01' }],
     }
-    mockFetch.mockResolvedValueOnce(data)
+    const fetch = vi.fn(async input => new Response(
+      JSON.stringify(String(input).endsWith('/titles') ? titles : data),
+      { headers: { 'content-type': 'application/json' } },
+    )) as typeof globalThis.fetch
 
-    await changesAction('32', {}, { json: false })
-    const outputText = logSpy.mock.calls[0][0] as string
-    expect(outputText).toContain('2026-03-15')
-    expect(outputText).toContain('National Defense')
+    const result = await runOperation(changes, { title: '32', part: '2002', since: '2025-01-01' }, { fetch })
 
-    Object.defineProperty(process.stdout, 'isTTY', { value: originalIsTTY, writable: true })
+    if (!result.envelope.ok) throw new Error('expected success')
+    expect(result.envelope.data).toEqual(data)
+    expect(result.envelope.source?.url).toContain('part=2002')
+    expect(result.envelope.source?.url).toContain('issue_date%5Bgte%5D=2025-01-01')
+    expect(result.envelope.currency).toEqual({
+      date: '2026-04-01',
+      latest_amended_on: '2026-03-30',
+      up_to_date_as_of: '2026-04-01',
+    })
   })
 })

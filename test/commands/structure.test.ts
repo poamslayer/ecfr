@@ -1,57 +1,31 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { runOperation } from '../../src/runtime/run.js'
+import { structure } from '../../src/schema/ops/structure.js'
 
-vi.mock('../../src/api.js', () => ({
-  ecfrFetch: vi.fn(),
-}))
+const hierarchy = {
+  identifier: 'title-32',
+  label: 'Title 32',
+  children: [{ identifier: 'chapter-I', label: 'Chapter I', children: [] }],
+}
+const currency = {
+  titles: [{ number: 32, latest_issue_date: '2026-04-01', latest_amended_on: '2026-03-30', up_to_date_as_of: '2026-04-01' }],
+}
 
-import { ecfrFetch } from '../../src/api.js'
-import { structureAction } from '../../src/commands/structure.js'
+describe('structure operation', () => {
+  it('defaults the issue date through the title currency lookup', async () => {
+    const fetch = vi.fn(async input => {
+      const url = String(input)
+      const body = url.endsWith('/titles') ? currency : hierarchy
+      return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
+    }) as typeof globalThis.fetch
 
-describe('structureAction', () => {
-  let logSpy: ReturnType<typeof vi.spyOn>
-  const mockFetch = vi.mocked(ecfrFetch)
+    const result = await runOperation(structure, { title: '32' }, { fetch })
 
-  beforeEach(() => {
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-  })
-
-  afterEach(() => {
-    logSpy.mockRestore()
-    vi.clearAllMocks()
-  })
-
-  it('fetches structure for a title and outputs JSON', async () => {
-    const data = {
-      identifier: 'title-32',
-      label: 'Title 32',
-      children: [{ identifier: 'chapter-I', label: 'Chapter I', children: [] }],
-    }
-    mockFetch.mockResolvedValueOnce(data)
-
-    await structureAction('32', { date: '2026-04-01' }, { json: true })
-    expect(mockFetch).toHaveBeenCalledWith('/api/versioner/v1/structure/2026-04-01/title-32.json')
-    expect(logSpy).toHaveBeenCalledWith(JSON.stringify(data, null, 2))
-  })
-
-  it('renders a tree view for human output', async () => {
-    const data = {
-      identifier: 'title-32',
-      label: 'Title 32',
-      children: [
-        {
-          identifier: 'chapter-I',
-          label: 'Chapter I',
-          children: [
-            { identifier: 'part-2002', label: 'Part 2002', label_description: 'CUI', children: [] },
-          ],
-        },
-      ],
-    }
-    mockFetch.mockResolvedValueOnce(data)
-
-    await structureAction('32', { date: '2026-04-01' }, { json: false })
-    const outputText = logSpy.mock.calls[0][0] as string
-    expect(outputText).toContain('Chapter I')
-    expect(outputText).toContain('Part 2002')
+    expect(result.exit_code).toBe(0)
+    if (!result.envelope.ok) throw new Error('expected success')
+    expect(result.envelope.data).toEqual(hierarchy)
+    expect(result.envelope.defaulted).toEqual(['date'])
+    expect(result.envelope.params).toEqual({ title: '32', date: '2026-04-01' })
+    expect(result.envelope.source?.url).toBe('https://www.ecfr.gov/api/versioner/v1/structure/2026-04-01/title-32.json')
   })
 })

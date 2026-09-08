@@ -1,103 +1,76 @@
 #!/usr/bin/env node
-import { Command, Option } from 'commander'
-import { titlesAction } from './commands/titles.js'
-import { agenciesAction } from './commands/agencies.js'
-import { structureAction } from './commands/structure.js'
-import { searchAction } from './commands/search.js'
-import { countsAction } from './commands/counts.js'
-import { changesAction } from './commands/changes.js'
-import { correctionsAction } from './commands/corrections.js'
-import { readAction } from './commands/read.js'
+import { Command, CommanderError, Option } from 'commander'
+import packageJson from '../package.json'
+import { flags, globalFlagKeys, operations, optionSpec, type FlagKey } from './schema/index.js'
+import type { AnyOperation } from './schema/types.js'
+import { writeResult } from './runtime/output.js'
+import { runOperation } from './runtime/run.js'
+
+function addFlag(command: Command, key: FlagKey): void {
+  const definition = flags[key]
+  command.addOption(new Option(optionSpec(key), definition.description))
+}
+
+function rawInputFor(op: AnyOperation, command: Command, positionalValue?: unknown): Record<string, unknown> {
+  const merged = command.optsWithGlobals<Record<string, unknown>>()
+  const input: Record<string, unknown> = {}
+  for (const key of op.flags) {
+    if (merged[key] !== undefined) input[key] = merged[key]
+  }
+  if (op.positional) input[op.positional.name] = positionalValue
+  return input
+}
 
 const program = new Command()
-
 program
   .name('ecfr')
   .description('CLI for the Electronic Code of Federal Regulations (eCFR)')
-  .version('0.1.0')
-
-program.addOption(
-  new Option('--json', 'Output raw JSON').default(false)
-)
-
-program
-  .command('titles')
-  .description('List all CFR titles')
-  .action(async (_opts, cmd) => {
-    const globalOpts = cmd.optsWithGlobals()
-    await titlesAction(globalOpts)
+  .version(packageJson.version)
+  .exitOverride()
+  .configureOutput({
+    writeOut: text => process.stdout.write(text),
+    writeErr: () => {},
   })
 
-program
-  .command('agencies')
-  .description('List all CFR agencies')
-  .option('--filter <text>', 'Filter agencies by name')
-  .action(async (opts, cmd) => {
-    const globalOpts = cmd.optsWithGlobals()
-    await agenciesAction(opts, globalOpts)
-  })
+for (const key of globalFlagKeys) addFlag(program, key)
 
-program
-  .command('structure <title>')
-  .description('Browse hierarchy of a CFR title')
-  .option('--date <date>', 'Date in YYYY-MM-DD format (defaults to today)')
-  .action(async (title, opts, cmd) => {
-    const globalOpts = cmd.optsWithGlobals()
-    await structureAction(title, opts, globalOpts)
-  })
+for (const op of operations) {
+  const command = program.command(op.name).description(op.summary)
+  if (op.positional) command.argument(`<${op.positional.name}>`, op.positional.description)
+  for (const key of op.flags) addFlag(command, key)
+  for (const key of globalFlagKeys) addFlag(command, key)
 
-program
-  .command('search <query>')
-  .description('Search across all CFR text')
-  .option('--title <n>', 'Filter by CFR title number')
-  .option('--agency <slug>', 'Filter by agency slug')
-  .option('--page <n>', 'Page number')
-  .option('--per-page <n>', 'Results per page')
-  .action(async (query, opts, cmd) => {
-    const globalOpts = cmd.optsWithGlobals()
-    await searchAction(query, opts, globalOpts)
+  command.action(async (...args: unknown[]) => {
+    const invoked = args.at(-1) as Command
+    const positional = op.positional ? args[0] : undefined
+    const merged = invoked.optsWithGlobals<Record<string, unknown>>()
+    const input = rawInputFor(op, invoked, positional)
+    const result = await runOperation(op, input, { dryRun: merged.dryRun === true })
+    writeResult(result, {
+      json: merged.json === true,
+      isTTY: process.stdout.isTTY === true,
+      stdout: process.stdout,
+      stderr: process.stderr,
+    })
+    process.exitCode = result.exit_code
   })
+}
 
-program
-  .command('counts <query>')
-  .description('Search result counts by hierarchy')
-  .option('--agency <slug>', 'Filter by agency slug')
-  .action(async (query, opts, cmd) => {
-    const globalOpts = cmd.optsWithGlobals()
-    await countsAction(query, opts, globalOpts)
-  })
-
-program
-  .command('changes <title>')
-  .description('Track regulation amendments for a title')
-  .option('--part <n>', 'Filter by part number')
-  .option('--section <n>', 'Filter by section number')
-  .option('--since <date>', 'Only show changes after this date (YYYY-MM-DD)')
-  .action(async (title, opts, cmd) => {
-    const globalOpts = cmd.optsWithGlobals()
-    await changesAction(title, opts, globalOpts)
-  })
-
-program
-  .command('corrections')
-  .description('View CFR corrections and errata')
-  .option('--title <n>', 'Filter by CFR title number')
-  .option('--date <date>', 'Filter by date')
-  .action(async (opts, cmd) => {
-    const globalOpts = cmd.optsWithGlobals()
-    await correctionsAction(opts, globalOpts)
-  })
-
-program
-  .command('read <title>')
-  .description('Read regulation text for a title')
-  .option('--part <n>', 'Filter by part number')
-  .option('--section <n>', 'Filter by section number')
-  .option('--date <date>', 'Date in YYYY-MM-DD format (defaults to today)')
-  .option('--xml', 'Output raw XML instead of parsed text')
-  .action(async (title, opts, cmd) => {
-    const globalOpts = cmd.optsWithGlobals()
-    await readAction(title, opts, globalOpts)
-  })
-
-program.parse()
+try {
+  await program.parseAsync(process.argv)
+} catch (err) {
+  if (err instanceof CommanderError) {
+    if (err.code === 'commander.helpDisplayed' || err.code === 'commander.version') {
+      process.exitCode = 0
+    } else {
+      const message = err.message.replace(/^error:\s*/i, '')
+      process.stderr.write(`error [USAGE]: ${message}\n`)
+      if (process.stderr.isTTY) process.stderr.write('hint: Run `ecfr --help`.\n')
+      process.exitCode = 2
+    }
+  } else {
+    const message = err instanceof Error ? err.message : String(err)
+    process.stderr.write(`error [INTERNAL]: ${message}\n`)
+    process.exitCode = 1
+  }
+}
