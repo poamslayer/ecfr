@@ -11,7 +11,7 @@ One thing the CLI can do, such as `read` or `local clear`. Every command, help p
 _Avoid_: Command handler, action, subcommand (use only when talking about Commander itself)
 
 **Kind**:
-The shape of an operation: `list`, `get`, `search`, `introspect`, or `mutate`. Recorded for introspection; it does not appear in the command name.
+The shape of an operation: `list`, `get`, `search`, or `introspect`. Recorded for introspection; it does not appear in the command name. The CLI only reads, so there is no mutating kind.
 
 **Capabilities**:
 The machine readable description of every operation, flag, error code, and exit code. Works offline and needs no credentials.
@@ -45,6 +45,10 @@ _Avoid_: Error type, reason
 **Remediation**:
 The one sentence in an error that tells the caller what to run or change next.
 _Avoid_: Hint (fine in terminal text, not in the envelope), suggestion, help text
+
+**Content**:
+A regulation's prose as one plain text string, carrying the section heading, the CFR's prescription note, and the clause itself in the order they are published. Never a serialization of the upstream markup.
+_Avoid_: Text, body, extracted text
 
 **Raw output**:
 The one exception to the envelope: `read --xml` writes the upstream XML bytes to stdout unchanged.
