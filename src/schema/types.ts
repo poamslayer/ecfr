@@ -54,7 +54,7 @@ export const exitCodeTable = [
 // ---------------------------------------------------------------------------
 
 export const warningSchema = z.object({
-  code: z.enum(['RETRIED', 'OUTPUT_SCHEMA_MISMATCH']),
+  code: z.enum(['RETRIED', 'OUTPUT_SCHEMA_MISMATCH', 'TRUNCATED']),
   message: z.string(),
   details: z.record(z.string(), z.unknown()).optional(),
 }).meta({ id: 'Warning', description: 'Something the caller should react to.' })

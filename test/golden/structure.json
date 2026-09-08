@@ -7,7 +7,18 @@
     "title": "32"
   },
   "defaulted": [],
-  "warnings": [],
+  "warnings": [
+    {
+      "code": "TRUNCATED",
+      "message": "Data was truncated from 1181109 to 262144 bytes. Raise or disable the bound with --max-bytes.",
+      "details": {
+        "bytes": 262144,
+        "original_bytes": 1181109,
+        "max_bytes": 262144,
+        "dropped": 23
+      }
+    }
+  ],
   "source": {
     "url": "https://www.ecfr.gov/api/versioner/v1/structure/2026-08-17/title-32.json",
     "fetched_at": "<fetched_at>"

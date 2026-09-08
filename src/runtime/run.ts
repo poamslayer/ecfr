@@ -3,11 +3,44 @@ import { policy } from '../schema/policy.js'
 import { exitCodes, type AnyOperation, type Currency, type Pagination, type RunResult, type Warning } from '../schema/types.js'
 import { fetchUpstream, type FetchDeps } from './api.js'
 import { makeCurrencyLookup } from './currency.js'
+import { boundData } from './bound.js'
 import { CliError, toErrorBody } from './errors.js'
 import { failure, success } from './envelope.js'
 
 export interface RunContextOptions extends FetchDeps {
   dryRun?: boolean
+  maxBytes?: unknown
+}
+
+function parseMaxBytes(op: AnyOperation, value: unknown): number | RunResult {
+  const parsed = flags.maxBytes.schema.safeParse(value)
+  if (parsed.success) return parsed.data
+  const error = new CliError('USAGE', 'Invalid value for --max-bytes.', {
+    remediation: `Run \`ecfr ${op.name} --help\`.`,
+    details: { issues: parsed.error.issues },
+  })
+  return {
+    envelope: failure(op.name, toErrorBody(error)),
+    exit_code: exitCodes.USAGE,
+  }
+}
+
+function applyBound(op: AnyOperation, data: unknown, maxBytes: number, warnings: Warning[]): unknown {
+  if (op.kind === 'introspect') return data
+  const bounded = boundData(data, maxBytes)
+  if (bounded.truncated) {
+    warnings.push({
+      code: 'TRUNCATED',
+      message: `Data was truncated from ${bounded.original_bytes} to ${bounded.bytes} bytes. Raise or disable the bound with --max-bytes.`,
+      details: {
+        bytes: bounded.bytes,
+        original_bytes: bounded.original_bytes,
+        max_bytes: maxBytes,
+        dropped: bounded.dropped,
+      },
+    })
+  }
+  return bounded.data
 }
 
 function shellQuote(value: unknown): string {
@@ -59,6 +92,10 @@ export async function runOperation(
   rawInput: unknown,
   ctxOptions: RunContextOptions = {},
 ): Promise<RunResult> {
+  const maxBytesResult = parseMaxBytes(op, ctxOptions.maxBytes)
+  if (typeof maxBytesResult !== 'number') return maxBytesResult
+  const maxBytes = maxBytesResult
+
   const parsed = op.input.safeParse(rawInput)
   if (!parsed.success) {
     const error = new CliError('USAGE', `Invalid params for ${op.name}.`, {
@@ -87,6 +124,7 @@ export async function runOperation(
           details: { issues: outputCheck.error.issues.slice(0, 5) },
         })
       }
+      const boundedData = applyBound(op, data, maxBytes, warnings)
       const envelope = success({
         operation: op.name,
         params: input as Record<string, unknown>,
@@ -94,7 +132,7 @@ export async function runOperation(
         warnings,
         source: null,
         dry_run: false,
-        data,
+        data: boundedData,
       })
       return {
         envelope,
@@ -141,6 +179,7 @@ export async function runOperation(
     const currency = await resolveCurrency(op, params, ctx)
 
     const pagination = makePagination(op, data, params)
+    const boundedData = applyBound(op, data, maxBytes, warnings)
     const envelope = success({
       operation: op.name,
       params,
@@ -150,7 +189,7 @@ export async function runOperation(
       ...(currency === undefined ? {} : { currency }),
       ...(pagination === undefined ? {} : { pagination }),
       dry_run: false,
-      data,
+      data: boundedData,
     })
 
     const raw = op.rawOutput === 'xml' && params.xml === true

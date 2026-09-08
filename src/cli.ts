@@ -45,7 +45,10 @@ for (const op of operations) {
     const positional = op.positional ? args[0] : undefined
     const merged = invoked.optsWithGlobals<Record<string, unknown>>()
     const input = rawInputFor(op, invoked, positional)
-    const result = await runOperation(op, input, { dryRun: merged.dryRun === true })
+    const result = await runOperation(op, input, {
+      dryRun: merged.dryRun === true,
+      maxBytes: merged.maxBytes,
+    })
     writeResult(result, {
       json: merged.json === true,
       isTTY: process.stdout.isTTY === true,
