@@ -29,6 +29,11 @@ const specs: FixtureSpec[] = [
     operation: 'read',
     input: { title: '32', part: '2002', section: '2002.14', date: '2026-08-17' },
   },
+  {
+    slug: 'read-48-252-204-7012',
+    operation: 'read',
+    input: { title: '48', part: '252', section: '252.204-7012', date: '2026-09-01' },
+  },
 ]
 
 function operationNamed(name: string): AnyOperation {

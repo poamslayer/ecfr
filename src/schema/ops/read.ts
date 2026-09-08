@@ -1,8 +1,15 @@
 import chalk from 'chalk'
 import { z } from 'zod'
-import { xmlToText } from '../../xml-parser.js'
+import { parseRegulation } from '../../xml-parser.js'
 import { flagObject, flags } from '../flags.js'
 import { defineOperation } from '../types.js'
+
+const sectionSchema = z.object({
+  number: z.string().nullable(),
+  citation: z.string().nullable(),
+  alternate_reference: z.string().nullable(),
+  federal_register_citation: z.string().nullable(),
+}).meta({ id: 'SectionMeta' })
 
 export const read = defineOperation({
   name: 'read',
@@ -30,9 +37,21 @@ export const read = defineOperation({
       defaulted: input.date ? [] : ['date'],
     }
   },
-  transform: (res, input) => ({ title: input.title, date: input.date!, content: xmlToText(String(res.body)) }),
-  output: z.looseObject({ title: z.string(), date: z.iso.date(), content: z.string() }),
-  render: data => `${chalk.bold(`Title ${data.title} — as of ${data.date}`)}\n\n${data.content}`,
+  transform: (res, input) => {
+    const regulation = parseRegulation(String(res.body))
+    return { title: input.title, date: input.date!, ...regulation }
+  },
+  output: z.looseObject({
+    title: z.string(),
+    date: z.iso.date(),
+    content: z.string(),
+    sections: z.array(sectionSchema),
+  }),
+  render: data => {
+    const citations = data.sections.flatMap(section => section.citation ? [section.citation] : [])
+    const citationLine = citations.length > 0 ? `\n${citations.join('\n')}` : ''
+    return `${chalk.bold(`Title ${data.title} — as of ${data.date}`)}${citationLine}\n\n${data.content}`
+  },
   examples: [
     { command: 'ecfr read 32 --part 2002 --section 2002.14', description: 'Read one section at the latest issue date' },
     { command: 'ecfr read 32 --date 2025-01-01 --xml', description: 'Write historical upstream XML unchanged' },

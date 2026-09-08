@@ -25,6 +25,19 @@ describe('fetchUpstream', () => {
     expect(res.attempts).toBe(1)
   })
 
+  it('requests an encoded upstream representation on every request', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response('{}', {
+      headers: { 'content-type': 'application/json' },
+    })) as typeof globalThis.fetch
+    await fetchUpstream(request, { fetch })
+    expect(fetch).toHaveBeenCalledWith('https://www.ecfr.gov/api/test', expect.objectContaining({
+      headers: {
+        Accept: 'application/json',
+        'Accept-Encoding': 'gzip, deflate',
+      },
+    }))
+  })
+
   it('maps 404 to NOT_FOUND without retrying', async () => {
     const fetch = vi.fn().mockResolvedValue(new Response('', { status: 404 })) as typeof globalThis.fetch
     const err = await getError(fetch)
