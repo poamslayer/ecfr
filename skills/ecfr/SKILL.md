@@ -195,26 +195,43 @@ The fixed network policy makes 2 retries after the first attempt, waits 30 secon
 
 ## Common Workflows
 
+Every example below reads from the envelope. Check `.ok` and the exit code first, then read `.data`.
+
 **Find what a CFR section says:**
-1. `ecfr structure <title>` to discover parts/sections
-2. `ecfr read <title> --part <n> --section <n>` to read the text
+1. `ecfr structure <title> --json | jq .data` to discover parts and sections
+2. `ecfr read <title> --part <n> --section <n> --json | jq -r .data.content` to read the text
+
+For example: `ecfr read 32 --part 2002 --section 2002.14 --json | jq -r .data.content`
 
 **Search for a regulatory topic:**
-1. `ecfr counts "<query>"` to see where matches cluster
-2. `ecfr search "<query>" --title <n>` to get excerpts from a specific title
+1. `ecfr counts "<query>" --json | jq .data` to see where matches cluster
+2. `ecfr search "<query>" --title <n> --json | jq .data.results` to get excerpts from one title
+3. `ecfr search "<query>" --title <n> --json | jq -r .pagination.next` to get the command for the next page, or null at the end
 
 **Check if a regulation changed recently:**
-1. `ecfr changes <title> --part <n> --since <date>` to see amendments
+1. `ecfr changes <title> --part <n> --since <date> --json | jq .data.content_versions` to list amendments
+
+**Cite a section with its currency:**
+1. `ecfr read <title> --part <n> --section <n> --json > out.json`
+2. `jq -r .currency.date out.json` gives the issue date the text was served for. Quote it with the citation.
+3. `jq -r .currency.up_to_date_as_of out.json` gives the date the eCFR says the title is up to date as of. Quote it too.
+4. `jq .defaulted out.json` tells you whether the CLI chose the issue date. `["date"]` means the CLI picked the latest one. `[]` means the caller passed `--date`.
+
+**Size a read before running it:**
+1. `ecfr read <title> --part <n> --dry-run --json | jq .source.url` shows the request without fetching the text
+2. Run the same command without `--dry-run` once the scope looks right
 
 ## Gotchas
 
-- Date format is always `YYYY-MM-DD`
-- Agency slugs (for `--agency`) come from `ecfr agencies` — use the slug field, not the name
-- The `read` command fetches XML from the eCFR API and parses it — large parts (like all of FAR Title 48) can be slow and produce massive output. Always scope with `--part` and ideally `--section`
-- The `search` and `structure` commands hit the eCFR API which may return errors during maintenance windows — retry once if a 400/404 occurs
-- Section numbers in `--section` use the full dotted notation (e.g., `2002.14`, not just `14`)
-- Parse `.data` for the operation-specific data.
-- Check `.ok` and the exit code before using the data.
-- Quote `.currency.date` when citing regulation text.
-- Use `--dry-run` before large reads.
-- `ecfr capabilities` prints the full machine readable contract.
+- Parse `.data` for the operation specific data. The rest of the envelope is metadata about the run.
+- Check `.ok` and the exit code before using the data. Exit 0 is success, including a dry run. Exit 1 is an unexpected upstream 4xx or an internal failure. Exit 2 is a usage error in flags or values. Exit 3 means ecfr.gov returned 404. Exit 4 is a transient failure after retries, so wait and retry later.
+- On failure the envelope has `.error.code`, `.error.message`, and `.error.remediation`. The remediation tells you what to run next.
+- `--json` may go before or after the command. `ecfr --json titles` and `ecfr titles --json` both work.
+- Dates are always `YYYY-MM-DD`.
+- Agency slugs for `--agency` come from `ecfr agencies`. Use the slug field, not the name.
+- Section numbers in `--section` use the full dotted form, such as `2002.14`, not `14`.
+- `read` on a whole title is slow and returns a very large `data.content`. Scope with `--part` and, when you can, `--section`. Try `--dry-run` first.
+- `read --xml` and `capabilities` are the only outputs that are not an envelope. `read --xml` is raw output, the upstream XML bytes unchanged. `capabilities` is always JSON and describes the whole contract offline.
+- A `warnings` entry with code `RETRIED` means the request succeeded after a retry. Nothing is missing.
+- A `warnings` entry with code `OUTPUT_SCHEMA_MISMATCH` means eCFR changed a field the CLI expected. The data is still returned. Check it before relying on the changed field.
+- `currency` appears only on title-scoped operations: `structure`, `changes`, and `read`.
