@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import packageJson from '../package.json'
 import { flags, globalFlagKeys, operations } from '../src/schema/index.js'
 
@@ -14,7 +14,14 @@ function normalize(text: string): string {
   return text.replace(/\s+/g, ' ').trim()
 }
 
+/** Help text per operation, spawned once for the whole file so no single test pays for nine cold starts. */
+const helpFor = new Map<string, string>()
+
 describe('--help', () => {
+  beforeAll(() => {
+    for (const op of operations) helpFor.set(op.name, runCli([op.name, '--help']))
+  }, 60_000)
+
   it('--version prints the package.json version', () => {
     expect(runCli(['--version']).trim()).toBe(packageJson.version)
   })
@@ -23,7 +30,7 @@ describe('--help', () => {
     const sharedKeys = [...op.flags, ...globalFlagKeys]
 
     it(`ecfr ${op.name} --help lists every declared flag plus --json and --dry-run`, () => {
-      const help = runCli([op.name, '--help'])
+      const help = helpFor.get(op.name)!
       for (const key of sharedKeys) {
         expect(help).toContain(`--${flags[key].name}`)
       }
@@ -35,7 +42,7 @@ describe('--help', () => {
     })
 
     it(`ecfr ${op.name} --help shows the shared registry description for each flag`, () => {
-      const help = normalize(runCli([op.name, '--help']))
+      const help = normalize(helpFor.get(op.name)!)
       for (const key of sharedKeys) {
         expect(help).toContain(normalize(flags[key].description))
       }
@@ -49,7 +56,7 @@ describe('--help', () => {
 
     for (const key of flagKeysInUse) {
       const declaringOps = operations.filter(op => op.flags.includes(key) || globalFlagKeys.includes(key))
-      const descriptions = declaringOps.map(op => normalize(runCli([op.name, '--help'])).includes(normalize(flags[key].description)))
+      const descriptions = declaringOps.map(op => normalize(helpFor.get(op.name)!).includes(normalize(flags[key].description)))
       expect(descriptions.every(Boolean)).toBe(true)
     }
   })
