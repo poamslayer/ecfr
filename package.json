@@ -1,6 +1,6 @@
 {
   "name": "@poamslayer/ecfr",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "CLI for the Electronic Code of Federal Regulations (eCFR) API",
   "type": "module",
   "bin": {
@@ -9,6 +9,9 @@
   "scripts": {
     "build": "tsup src/cli.ts --format esm",
     "dev": "tsx src/cli.ts",
+    "generate": "tsx scripts/generate.ts",
+    "generate:check": "tsx scripts/generate.ts --check",
+    "fixtures:record": "tsx scripts/record-fixtures.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -25,7 +28,8 @@
   ],
   "license": "MIT",
   "files": [
-    "dist"
+    "dist",
+    "skills"
   ],
   "repository": {
     "type": "git",
@@ -35,7 +39,8 @@
     "chalk": "^5.6.2",
     "cli-table3": "^0.6.5",
     "commander": "^14.0.3",
-    "fast-xml-parser": "^5.5.9"
+    "fast-xml-parser": "^5.5.9",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

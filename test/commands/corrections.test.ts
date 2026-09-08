@@ -1,71 +1,24 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { runOperation } from '../../src/runtime/run.js'
+import { corrections } from '../../src/schema/ops/corrections.js'
 
-vi.mock('../../src/api.js', () => ({
-  ecfrFetch: vi.fn(),
-}))
-
-import { ecfrFetch } from '../../src/api.js'
-import { correctionsAction } from '../../src/commands/corrections.js'
-
-describe('correctionsAction', () => {
-  let logSpy: ReturnType<typeof vi.spyOn>
-  const mockFetch = vi.mocked(ecfrFetch)
-
-  beforeEach(() => {
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-  })
-
-  afterEach(() => {
-    logSpy.mockRestore()
-    vi.clearAllMocks()
-  })
-
-  it('calls all-corrections endpoint when no title given', async () => {
+describe('corrections operation', () => {
+  it('uses title and date query params on the corrections endpoint', async () => {
     const data = {
       ecfr_corrections: [{
-        fr_citation: '90 FR 12345',
-        corrective_action: 'Correcting amendment',
-        error_corrected: '2026-01-15',
-        error_occurred: '2025-12-01',
-        title: 32,
+        fr_citation: '90 FR 12345', corrective_action: 'Correcting amendment',
+        error_corrected: '2026-01-15', error_occurred: '2025-12-01', title: 32,
         cfr_references: [{ cfr_reference: '32 CFR 2002.14' }],
       }],
     }
-    mockFetch.mockResolvedValueOnce(data)
+    const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(data), {
+      headers: { 'content-type': 'application/json' },
+    })) as typeof globalThis.fetch
 
-    await correctionsAction({}, { json: true })
-    expect(mockFetch).toHaveBeenCalledWith('/api/admin/v1/corrections')
-  })
+    const result = await runOperation(corrections, { title: '32', date: '2025-01-01' }, { fetch })
 
-  it('calls title-specific endpoint when title given', async () => {
-    const data = { ecfr_corrections: [] }
-    mockFetch.mockResolvedValueOnce(data)
-
-    await correctionsAction({ title: '32' }, { json: true })
-    expect(mockFetch).toHaveBeenCalledWith('/api/admin/v1/corrections/title-32')
-  })
-
-  it('renders human table output', async () => {
-    const originalIsTTY = process.stdout.isTTY
-    Object.defineProperty(process.stdout, 'isTTY', { value: true, writable: true })
-
-    const data = {
-      ecfr_corrections: [{
-        fr_citation: '90 FR 12345',
-        corrective_action: 'Correcting amendment',
-        error_corrected: '2026-01-15',
-        error_occurred: '2025-12-01',
-        title: 32,
-        cfr_references: [{ cfr_reference: '32 CFR 2002.14' }],
-      }],
-    }
-    mockFetch.mockResolvedValueOnce(data)
-
-    await correctionsAction({}, { json: false })
-    const outputText = logSpy.mock.calls[0][0] as string
-    expect(outputText).toContain('90 FR 12345')
-    expect(outputText).toContain('Correcting amendment')
-
-    Object.defineProperty(process.stdout, 'isTTY', { value: originalIsTTY, writable: true })
+    if (!result.envelope.ok) throw new Error('expected success')
+    expect(result.envelope.data).toEqual(data)
+    expect(result.envelope.source?.url).toBe('https://www.ecfr.gov/api/admin/v1/corrections.json?title=32&date=2025-01-01')
   })
 })

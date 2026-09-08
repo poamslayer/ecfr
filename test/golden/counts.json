@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "version": "0.2.0",
+  "operation": "counts",
+  "params": {
+    "query": "cybersecurity"
+  },
+  "defaulted": [],
+  "warnings": [],
+  "source": {
+    "url": "https://www.ecfr.gov/api/search/v1/counts/hierarchy?query=cybersecurity",
+    "fetched_at": "<fetched_at>"
+  },
+  "dry_run": false,
+  "data": {
+    "keys": [
+      "count",
+      "max_score",
+      "children",
+      "shown_count"
+    ]
+  }
+}

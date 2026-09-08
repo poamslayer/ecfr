@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "version": "0.2.0",
+  "operation": "corrections",
+  "params": {
+    "title": "32"
+  },
+  "defaulted": [],
+  "warnings": [],
+  "source": {
+    "url": "https://www.ecfr.gov/api/admin/v1/corrections.json?title=32",
+    "fetched_at": "<fetched_at>"
+  },
+  "dry_run": false,
+  "data": {
+    "keys": [
+      "ecfr_corrections"
+    ]
+  }
+}

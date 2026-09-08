@@ -13,3 +13,7 @@ The five canonical triage roles map one-to-one to labels of the same name (`need
 ### Domain docs
 
 Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+### Driving the CLI
+
+Run `ecfr capabilities` first, pass `--json`, check `ok` and the exit code, and parse `data`. See `docs/agents/cli.md`.
