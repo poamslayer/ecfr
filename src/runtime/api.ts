@@ -67,7 +67,10 @@ export async function fetchUpstream(req: UpstreamRequest, deps: FetchDeps = {}):
     try {
       response = await withTimeout(
         fetchImpl(url, {
-          headers: { Accept: req.accept === 'json' ? 'application/json' : 'application/xml' },
+          headers: {
+            Accept: req.accept === 'json' ? 'application/json' : 'application/xml',
+            'Accept-Encoding': 'gzip, deflate',
+          },
           signal: controller.signal,
         }),
         policy.headers_timeout_ms,

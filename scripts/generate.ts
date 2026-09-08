@@ -173,7 +173,7 @@ const dataDescriptions: Record<string, string[]> = {
   counts: ['`data.count` holds the overall count; `data.children` holds counts grouped through the CFR hierarchy.'],
   changes: ['`data.content_versions` holds the title amendment history.'],
   corrections: ['`data.ecfr_corrections` holds correction and errata records.'],
-  read: ['`data.title`, `data.date`, and `data.content` hold the served title, issue date, and parsed regulation text.'],
+  read: ['`data.title`, `data.date`, `data.content`, and `data.sections` hold the served title, issue date, Content, and per-section metadata.'],
   capabilities: ['This operation is raw output. Its top-level keys describe the CLI, policy, operations, exit codes, flags, and schemas.'],
 }
 

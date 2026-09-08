@@ -140,7 +140,7 @@ ecfr read 32 --date 2025-01-01 --xml # Write historical upstream XML unchanged
 | `--date` | `<date>` | Issue date as YYYY-MM-DD. |
 | `--xml` | `boolean` | Write the upstream XML to stdout unchanged instead of the envelope. |
 
-`data.title`, `data.date`, and `data.content` hold the served title, issue date, and parsed regulation text. Read `currency` for the issue date and the eCFR currency dates. Use `--dry-run` to inspect `source.url` and the effective params without fetching the data.
+`data.title`, `data.date`, `data.content`, and `data.sections` hold the served title, issue date, Content, and per-section metadata. Read `currency` for the issue date and the eCFR currency dates. Use `--dry-run` to inspect `source.url` and the effective params without fetching the data.
 
 ### Describe CLI capabilities
 
