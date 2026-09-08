@@ -74,10 +74,10 @@ describe('envelope golden', () => {
     })
   }
 
-  it('data for structure strictly validates its output schema with no warnings', async () => {
+  it('bounded data for structure still validates its output schema and carries a truncation warning', async () => {
     const result = await runOperation(structure, specs.structure, { fetch: fixtureFetch() })
     if (!result.envelope.ok) throw new Error('expected success for structure')
     expect(structure.output.safeParse(result.envelope.data).success).toBe(true)
-    expect(result.envelope.warnings).toEqual([])
+    expect(result.envelope.warnings).toContainEqual(expect.objectContaining({ code: 'TRUNCATED' }))
   })
 })

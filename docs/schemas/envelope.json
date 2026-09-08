@@ -90,7 +90,8 @@
           "type": "string",
           "enum": [
             "RETRIED",
-            "OUTPUT_SCHEMA_MISMATCH"
+            "OUTPUT_SCHEMA_MISMATCH",
+            "TRUNCATED"
           ]
         },
         "message": {

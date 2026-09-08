@@ -31,6 +31,13 @@ export const flags = {
     schema: z.boolean().default(false),
     global: true,
   },
+  maxBytes: {
+    name: 'max-bytes',
+    value: '<n>',
+    description: 'Maximum serialized size of "data" in bytes before the response is truncated with a warning. 0 disables the bound.',
+    schema: z.coerce.number().int().nonnegative().default(262144),
+    global: true,
+  },
   title: {
     name: 'title',
     value: '<n>',

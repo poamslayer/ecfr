@@ -161,6 +161,7 @@ ecfr capabilities # Print the complete CLI capabilities as JSON
 | --- | --- | --- |
 | `--json` | `boolean` | Write the JSON envelope to stdout (default when stdout is not a TTY). |
 | `--dry-run` | `boolean` | Resolve the request and return the envelope without fetching the data. Only the small title list is read, to resolve a defaulted date. |
+| `--max-bytes` | `<n>` | Maximum serialized size of "data" in bytes before the response is truncated with a warning. 0 disables the bound. |
 
 ## Output modes
 

@@ -73,6 +73,11 @@
     {
       "name": "--dry-run",
       "description": "Resolve the request and return the envelope without fetching the data. Only the small title list is read, to resolve a defaulted date."
+    },
+    {
+      "name": "--max-bytes",
+      "value": "<n>",
+      "description": "Maximum serialized size of \"data\" in bytes before the response is truncated with a warning. 0 disables the bound."
     }
   ],
   "operations": [
@@ -980,7 +985,8 @@
               "type": "string",
               "enum": [
                 "RETRIED",
-                "OUTPUT_SCHEMA_MISMATCH"
+                "OUTPUT_SCHEMA_MISMATCH",
+                "TRUNCATED"
               ]
             },
             "message": {
