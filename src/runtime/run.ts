@@ -1,4 +1,5 @@
-import { flags } from '../schema/flags.js'
+import { randomUUID } from 'node:crypto'
+import { flags, remediationFor } from '../schema/flags.js'
 import { policy } from '../schema/policy.js'
 import { exitCodes, type AnyOperation, type Currency, type Pagination, type RunResult, type Warning } from '../schema/types.js'
 import { fetchUpstream, type FetchDeps } from './api.js'
@@ -12,17 +13,32 @@ export interface RunContextOptions extends FetchDeps {
   maxBytes?: unknown
 }
 
-function parseMaxBytes(op: AnyOperation, value: unknown): number | RunResult {
+interface Trace {
+  request_id: string
+  agent: string | null
+}
+
+function untrustedPaths(op: AnyOperation): string[] {
+  return op.untrusted ?? (op.network === 'remote' ? ['data'] : [])
+}
+
+function failureResult(op: AnyOperation, error: CliError, trace: Trace): RunResult {
+  const body = toErrorBody(error)
+  return {
+    envelope: failure(op.name, body, trace),
+    exit_code: exitCodes[body.code],
+  }
+}
+
+function parseMaxBytes(op: AnyOperation, value: unknown, trace: Trace): number | RunResult {
   const parsed = flags.maxBytes.schema.safeParse(value)
   if (parsed.success) return parsed.data
   const error = new CliError('USAGE', 'Invalid value for --max-bytes.', {
     remediation: `Run \`ecfr ${op.name} --help\`.`,
+    field: 'maxBytes',
     details: { issues: parsed.error.issues },
   })
-  return {
-    envelope: failure(op.name, toErrorBody(error)),
-    exit_code: exitCodes.USAGE,
-  }
+  return failureResult(op, error, trace)
 }
 
 function applyBound(op: AnyOperation, data: unknown, maxBytes: number, warnings: Warning[]): unknown {
@@ -92,25 +108,34 @@ export async function runOperation(
   rawInput: unknown,
   ctxOptions: RunContextOptions = {},
 ): Promise<RunResult> {
-  const maxBytesResult = parseMaxBytes(op, ctxOptions.maxBytes)
+  const trace = {
+    request_id: ctxOptions.requestId ?? randomUUID(),
+    agent: ctxOptions.agent ?? null,
+  }
+  const maxBytesResult = parseMaxBytes(op, ctxOptions.maxBytes, trace)
   if (typeof maxBytesResult !== 'number') return maxBytesResult
   const maxBytes = maxBytesResult
 
   const parsed = op.input.safeParse(rawInput)
   if (!parsed.success) {
+    const pathHead = parsed.error.issues[0]?.path[0]
+    const field = typeof pathHead === 'string' ? pathHead : undefined
     const error = new CliError('USAGE', `Invalid params for ${op.name}.`, {
-      remediation: `Run \`ecfr ${op.name} --help\`.`,
+      remediation: remediationFor(field) ?? `Run \`ecfr ${op.name} --help\`.`,
+      field,
       details: { issues: parsed.error.issues },
     })
-    return {
-      envelope: failure(op.name, toErrorBody(error)),
-      exit_code: exitCodes.USAGE,
-    }
+    return failureResult(op, error, trace)
   }
 
   const input = parsed.data
-  const requestFetch = (req: Parameters<typeof fetchUpstream>[0]) => fetchUpstream(req, ctxOptions)
+  const requestFetch = (req: Parameters<typeof fetchUpstream>[0]) => fetchUpstream(req, {
+    ...ctxOptions,
+    requestId: trace.request_id,
+    agent: trace.agent,
+  })
   const ctx = { currency: makeCurrencyLookup(requestFetch) }
+  let effectiveParams = input as Record<string, unknown>
 
   try {
     if (op.network === 'none') {
@@ -127,6 +152,8 @@ export async function runOperation(
       const boundedData = applyBound(op, data, maxBytes, warnings)
       const envelope = success({
         operation: op.name,
+        ...trace,
+        untrusted: untrustedPaths(op),
         params: input as Record<string, unknown>,
         defaulted: [],
         warnings,
@@ -143,12 +170,15 @@ export async function runOperation(
 
     const request = await op.request!(input, ctx)
     const params = request.params as Record<string, unknown>
+    effectiveParams = params
     const requestUrl = new URL(request.path, policy.base_url).toString()
     if (ctxOptions.dryRun) {
       const currency = await resolveCurrency(op, params, ctx)
       return {
         envelope: success({
           operation: op.name,
+          ...trace,
+          untrusted: untrustedPaths(op),
           params,
           defaulted: request.defaulted,
           warnings: [],
@@ -182,6 +212,8 @@ export async function runOperation(
     const boundedData = applyBound(op, data, maxBytes, warnings)
     const envelope = success({
       operation: op.name,
+      ...trace,
+      untrusted: untrustedPaths(op),
       params,
       defaulted: request.defaulted,
       warnings,
@@ -199,9 +231,20 @@ export async function runOperation(
         : undefined
     return { envelope, exit_code: exitCodes.OK, ...(raw === undefined ? {} : { raw }) }
   } catch (err) {
-    const error = toErrorBody(err)
+    let error = toErrorBody(err)
+    if (error.code === 'NOT_FOUND') {
+      const field = effectiveParams.section !== undefined
+        ? 'section'
+        : effectiveParams.part !== undefined
+          ? 'part'
+          : effectiveParams.title !== undefined
+            ? 'title'
+            : undefined
+      const remediation = field === undefined ? flags.title.remediation : remediationFor(field)!
+      error = { ...error, ...(field === undefined ? {} : { field }), remediation }
+    }
     return {
-      envelope: failure(op.name, error),
+      envelope: failure(op.name, error, trace),
       exit_code: exitCodes[error.code],
     }
   }

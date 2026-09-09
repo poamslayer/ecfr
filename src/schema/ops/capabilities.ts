@@ -1,7 +1,8 @@
 import { z } from 'zod'
 import packageJson from '../../../package.json'
 import { flags, globalFlagKeys } from '../flags.js'
-import { policy } from '../policy.js'
+import { envVars } from '../env.js'
+import { defaultTarget, policy, targets } from '../policy.js'
 import {
   defineOperation,
   envelopeSchema,
@@ -12,6 +13,13 @@ import {
 
 const outputSchema = z.looseObject({
   cli: z.looseObject({ name: z.string(), version: z.string() }),
+  targets: z.record(z.string(), z.looseObject({
+    name: z.string(),
+    base_url: z.string(),
+    description: z.string(),
+  })),
+  default_target: z.string(),
+  environment: z.array(z.object({ name: z.string(), description: z.string() })),
   operations: z.array(z.looseObject({ name: z.string() })),
 })
 
@@ -28,6 +36,12 @@ export const capabilities = defineOperation({
     const { operations } = await import('../index.js')
     return {
       cli: { name: 'ecfr', version: packageJson.version },
+      targets,
+      default_target: defaultTarget,
+      environment: Object.values(envVars).map(variable => ({
+        name: variable.name,
+        description: variable.description,
+      })),
       policy,
       exit_codes: exitCodeTable,
       error_codes: errorCodes,
@@ -50,6 +64,7 @@ export const capabilities = defineOperation({
           description: flags[key].description,
         })),
         network: op.network,
+        untrusted: op.untrusted ?? (op.network === 'remote' ? ['data'] : []),
         title_scoped: op.titleScoped ?? false,
         raw_output: op.rawOutput ?? null,
         examples: op.examples,

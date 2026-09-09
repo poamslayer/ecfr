@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import packageJson from '../../package.json'
 import { fetchUpstream } from '../../src/runtime/api.js'
 import { CliError } from '../../src/runtime/errors.js'
 
@@ -29,13 +30,33 @@ describe('fetchUpstream', () => {
     const fetch = vi.fn().mockResolvedValue(new Response('{}', {
       headers: { 'content-type': 'application/json' },
     })) as typeof globalThis.fetch
-    await fetchUpstream(request, { fetch })
+    await fetchUpstream(request, { fetch, requestId: 'request-123' })
     expect(fetch).toHaveBeenCalledWith('https://www.ecfr.gov/api/test', expect.objectContaining({
-      headers: {
+      headers: expect.objectContaining({
         Accept: 'application/json',
         'Accept-Encoding': 'gzip, deflate',
-      },
+        'User-Agent': `ecfr/${packageJson.version} (+https://github.com/poamslayer/ecfr)`,
+        'X-Request-Id': 'request-123',
+      }),
     }))
+  })
+
+  it('omits X-Agent-Name when no agent name is set', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response('{}', {
+      headers: { 'content-type': 'application/json' },
+    })) as typeof globalThis.fetch
+    await fetchUpstream(request, { fetch, requestId: 'request-123', agent: null })
+    const headers = (fetch.mock.calls[0][1] as RequestInit).headers as Record<string, string>
+    expect(headers).not.toHaveProperty('X-Agent-Name')
+  })
+
+  it('sends X-Agent-Name when an agent name is set', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response('{}', {
+      headers: { 'content-type': 'application/json' },
+    })) as typeof globalThis.fetch
+    await fetchUpstream(request, { fetch, requestId: 'request-123', agent: 'audit-agent' })
+    const headers = (fetch.mock.calls[0][1] as RequestInit).headers as Record<string, string>
+    expect(headers['X-Agent-Name']).toBe('audit-agent')
   })
 
   it('maps 404 to NOT_FOUND without retrying', async () => {

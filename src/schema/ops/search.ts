@@ -32,6 +32,7 @@ export const search = defineOperation({
   flags: ['title', 'agency', 'page', 'perPage'],
   input: inputSchema,
   network: 'remote',
+  untrusted: ['data.results'],
   request: async input => {
     const query = new URLSearchParams({ query: input.query })
     if (input.title) query.set('hierarchy[title]', input.title)

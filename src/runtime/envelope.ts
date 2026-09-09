@@ -1,4 +1,5 @@
 import packageJson from '../../package.json'
+import { defaultTarget } from '../schema/policy.js'
 import type {
   CliErrorBody,
   Currency,
@@ -11,6 +12,9 @@ import type {
 
 interface SuccessInput<O> {
   operation: string
+  request_id: string
+  agent: string | null
+  untrusted: string[]
   params: Record<string, unknown>
   defaulted: string[]
   warnings: Warning[]
@@ -26,6 +30,10 @@ export function success<O>(input: SuccessInput<O>): SuccessEnvelope<O> {
     ok: true,
     version: packageJson.version,
     operation: input.operation,
+    request_id: input.request_id,
+    agent: input.agent,
+    target: defaultTarget,
+    untrusted: input.untrusted,
     params: input.params,
     defaulted: input.defaulted,
     warnings: input.warnings,
@@ -37,11 +45,17 @@ export function success<O>(input: SuccessInput<O>): SuccessEnvelope<O> {
   }
 }
 
-export function failure(operation: string, error: CliErrorBody): ErrorEnvelope {
+export function failure(
+  operation: string,
+  error: CliErrorBody,
+  trace: { request_id: string; agent: string | null },
+): ErrorEnvelope {
   return {
     ok: false,
     version: packageJson.version,
     operation,
+    request_id: trace.request_id,
+    agent: trace.agent,
     error,
   }
 }

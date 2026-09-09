@@ -20,6 +20,7 @@ export const read = defineOperation({
   flags: ['part', 'section', 'date', 'xml'],
   input: flagObject(['part', 'section', 'date', 'xml']).extend({ title: flags.title.schema }),
   network: 'remote',
+  untrusted: ['data.content', 'data.sections'],
   titleScoped: true,
   rawOutput: 'xml',
   request: async (input, ctx) => {

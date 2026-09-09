@@ -1,6 +1,16 @@
 /**
  * Fixed network policy. No flags override these; they are reported by `capabilities`.
  */
+export const targets = {
+  ecfr: {
+    name: 'ecfr',
+    base_url: 'https://www.ecfr.gov',
+    description: 'The public eCFR API at ecfr.gov.',
+  },
+} as const
+
+export const defaultTarget = 'ecfr'
+
 export const policy = {
   /** Retries after the first attempt on 429, 5xx, network errors, and timeouts. */
   retries: 2,
@@ -10,7 +20,7 @@ export const policy = {
   headers_timeout_ms: 30_000,
   /** Time allowed to receive the full body after headers. */
   body_timeout_ms: 300_000,
-  base_url: 'https://www.ecfr.gov',
+  base_url: targets[defaultTarget].base_url,
 } as const
 
 export type Policy = typeof policy

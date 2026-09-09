@@ -2,6 +2,12 @@
   "ok": true,
   "version": "0.3.0",
   "operation": "titles",
+  "request_id": "<request_id>",
+  "agent": null,
+  "target": "ecfr",
+  "untrusted": [
+    "data"
+  ],
   "params": {},
   "defaulted": [],
   "warnings": [],

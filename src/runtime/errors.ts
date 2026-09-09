@@ -20,6 +20,7 @@ export interface CliErrorInit {
   status?: number
   retryable?: boolean
   remediation?: string
+  field?: string
   details?: Record<string, unknown>
 }
 
@@ -28,6 +29,7 @@ export class CliError extends Error {
   readonly status?: number
   readonly retryable: boolean
   readonly remediation: string
+  readonly field?: string
   readonly details: Record<string, unknown>
 
   constructor(code: ErrorCode, message: string, init: CliErrorInit = {}) {
@@ -37,6 +39,7 @@ export class CliError extends Error {
     this.status = init.status
     this.retryable = init.retryable ?? retryableCodes.has(code)
     this.remediation = init.remediation ?? remediations[code]
+    this.field = init.field
     this.details = init.details ?? {}
   }
 }
@@ -54,6 +57,7 @@ export function toErrorBody(err: unknown): CliErrorBody {
     ...(cliError.status === undefined ? {} : { status: cliError.status }),
     retryable: cliError.retryable,
     remediation: cliError.remediation,
+    ...(cliError.field === undefined ? {} : { field: cliError.field }),
     details: cliError.details,
   }
 }

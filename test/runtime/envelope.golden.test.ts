@@ -24,6 +24,7 @@ const specs: Record<string, Record<string, unknown>> = {
 /** Fixed fetched_at, and data truncated to its keys — the schema check already covers the payload. */
 function normalize(envelope: Envelope): unknown {
   const clone = JSON.parse(JSON.stringify(envelope)) as Record<string, unknown>
+  clone.request_id = '<request_id>'
   const source = clone.source as { fetched_at?: string } | null
   if (source) source.fetched_at = '<fetched_at>'
   const data = clone.data

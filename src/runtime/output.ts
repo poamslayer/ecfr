@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import { findOperation } from '../schema/index.js'
+import type { EnvValues } from '../schema/env.js'
 import type { RunResult } from '../schema/types.js'
 
 interface Writable {
@@ -7,7 +8,9 @@ interface Writable {
 }
 
 export interface OutputOptions {
+  output?: unknown
   json: boolean
+  environment?: EnvValues
   isTTY: boolean
   stdout: Writable
   stderr: Writable
@@ -18,7 +21,12 @@ function line(value: string): string {
 }
 
 export function writeResult(result: RunResult, options: OutputOptions): void {
-  const jsonMode = options.json || !options.isTTY
+  const format = options.output === 'json' || options.output === 'text'
+    ? options.output
+    : options.json
+      ? 'json'
+      : options.environment?.output ?? 'json'
+  const jsonMode = format === 'json'
   if (!result.envelope.ok) {
     if (jsonMode) options.stdout.write(`${JSON.stringify(result.envelope, null, 2)}\n`)
     options.stderr.write(`error [${result.envelope.error.code}]: ${result.envelope.error.message}\n`)

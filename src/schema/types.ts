@@ -96,6 +96,7 @@ export const errorSchema = z.object({
   status: z.number().int().optional().describe('Upstream HTTP status when there was one.'),
   retryable: z.boolean(),
   remediation: z.string().describe('What to run or change next.'),
+  field: z.string().optional().describe('The argument that was wrong, when one argument was.'),
   details: z.record(z.string(), z.unknown()),
 }).meta({ id: 'Error' })
 export type CliErrorBody = z.infer<typeof errorSchema>
@@ -103,11 +104,15 @@ export type CliErrorBody = z.infer<typeof errorSchema>
 const envelopeBase = {
   version: z.string().describe('CLI version that produced this envelope.'),
   operation: z.string(),
+  request_id: z.string().describe('Per-invocation identifier for tracing.'),
+  agent: z.string().nullable().describe('Self-reported agent name for tracing, or null.'),
 }
 
 export const successEnvelopeSchema = z.object({
   ok: z.literal(true),
   ...envelopeBase,
+  target: z.string().describe('Target that served or is described by this envelope.'),
+  untrusted: z.array(z.string()).describe('Dot paths naming fields that hold fetched external content.'),
   params: z.record(z.string(), z.unknown()).describe('Effective inputs after defaults.'),
   defaulted: z.array(z.string()).describe('Names of params the CLI filled in.'),
   warnings: z.array(warningSchema),
@@ -190,6 +195,8 @@ export interface Operation<IS extends z.ZodType = z.ZodType, OS extends z.ZodTyp
   /** Validates positional plus op flags together. */
   input: IS
   network: 'remote' | 'none'
+  /** Dot paths within the Envelope that hold fetched external Content. */
+  untrusted?: string[]
   /** Adds `currency` to the envelope, keyed by `params.title`. */
   titleScoped?: boolean
   /** Bypasses the envelope. `xml` only when `input.xml` is set; `json` always. */

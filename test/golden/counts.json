@@ -2,6 +2,12 @@
   "ok": true,
   "version": "0.3.0",
   "operation": "counts",
+  "request_id": "<request_id>",
+  "agent": null,
+  "target": "ecfr",
+  "untrusted": [
+    "data"
+  ],
   "params": {
     "query": "cybersecurity"
   },

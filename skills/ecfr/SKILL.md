@@ -163,6 +163,10 @@ The JSON envelope uses these top-level keys:
 - `ok`: whether the operation succeeded.
 - `version`: the CLI version that produced the envelope.
 - `operation`: the operation that ran.
+- `request_id`: the per-invocation identifier echoed to upstream calls.
+- `agent`: the self-reported agent name for tracing, or null.
+- `target`: the target that served a successful response.
+- `untrusted`: dot paths naming fields that hold fetched external content.
 - `params`: the effective params after defaults.
 - `defaulted`: the params the CLI filled in.
 - `warnings`: conditions the caller should react to.
@@ -171,7 +175,7 @@ The JSON envelope uses these top-level keys:
 - `pagination`: paging details for search, including a ready-to-run `next` command.
 - `dry_run`: whether the operation stopped before fetching data.
 - `data`: the operation-specific data on success.
-- `error`: the error code, message, retryability, remediation, and details on failure.
+- `error`: the error code, message, optional field, retryability, remediation, and details on failure.
 
 The fixed network policy makes 2 retries after the first attempt, waits 30 seconds for headers, and allows 5 minutes for the body.
 

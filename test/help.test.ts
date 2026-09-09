@@ -26,6 +26,16 @@ describe('--help', () => {
     expect(runCli(['--version']).trim()).toBe(packageJson.version)
   })
 
+  it('root help has a usage line and generated examples', () => {
+    const help = runCli(['--help'])
+    expect(help).toContain('Usage: ecfr <operation> [options]')
+    for (const op of operations) {
+      for (const example of op.examples) {
+        expect(help).toContain(`${example.command} # ${example.description}`)
+      }
+    }
+  })
+
   for (const op of operations) {
     const sharedKeys = [...op.flags, ...globalFlagKeys]
 
@@ -38,6 +48,14 @@ describe('--help', () => {
       expect(help).toContain('--dry-run')
       if (op.positional) {
         expect(help).toContain(`<${op.positional.name}>`)
+      }
+    })
+
+    it(`ecfr ${op.name} --help has a usage line and generated examples`, () => {
+      const help = helpFor.get(op.name)!
+      expect(help).toContain(`Usage: ecfr ${op.name}`)
+      for (const example of op.examples) {
+        expect(help).toContain(`${example.command} # ${example.description}`)
       }
     })
 

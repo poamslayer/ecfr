@@ -35,6 +35,10 @@
           "type": "string",
           "description": "What to run or change next."
         },
+        "field": {
+          "description": "The argument that was wrong, when one argument was.",
+          "type": "string"
+        },
         "details": {
           "type": "object",
           "propertyNames": {
