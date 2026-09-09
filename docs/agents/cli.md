@@ -67,6 +67,19 @@ ecfr structure 32 | jq '[.warnings[] | select(.code == "TRUNCATED")] | length'
 
 `--part` and `--section` take 1 to 64 characters, start with a letter or digit, and contain only letters, digits, dots, hyphens, and parentheses, with no `..`. Parentheses are allowed because Title 26 has sections like `1.1031(a)-1`. A traversal sequence, an embedded `?` or `#`, a percent sequence, or a control character exits 2. It is never encoded and sent upstream, and never repaired.
 
+## Reading by citation
+
+If you pulled a citation out of a document, pass it straight through. `read` takes either a bare title number, as it always has, or a citation in one of two forms, matched case-insensitively:
+
+```bash
+ecfr read "32 CFR 2002.14" | jq '{title: .params.title, part: .params.part, section: .params.section}'
+ecfr read "32 CFR part 2002" | jq .params
+```
+
+The part is derived from everything before the first dot of the section, so `252.204-7012` gives part `252`. `params` reports the resolved title, part, and section, with what you typed in `params.citation`. A citation cannot be combined with `--part` or `--section`; that exits 2 naming the flag that conflicts.
+
+The eCFR API addresses parts and sections only, so three things are rejected rather than quietly narrowed, each naming the part-level command to run instead: a subpart or appendix qualifier such as `32 CFR 2002.14 Subpart B`; a section range such as `32 CFR 2002.14-2002.16`; and an alternate reference such as `DFARS 252.204-7012`, whose CFR form is `48 CFR 252.204-7012`. A hyphen alone does not make a range, so `48 CFR 252.204-7012` and `26 CFR 1.148-1A` are both accepted.
+
 ## Before an expensive read
 
 `read` on a whole title is slow and returns a very large `data.content`. Pass `--dry-run` first. The CLI resolves the params and the issue date, returns the envelope with `source.url`, `params`, `defaulted`, `currency`, `dry_run: true`, and `data: null`, and exits 0. Only the small title list is read, to resolve a defaulted date. When the request looks right, run the same command without `--dry-run`. Scope with `--part` and, when you can, `--section`.

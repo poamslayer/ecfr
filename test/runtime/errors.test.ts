@@ -74,7 +74,9 @@ describe('runtime errors', () => {
   })
 
   it('maps a zod validation failure to USAGE, exit 2, with details.issues', async () => {
-    const result = await runOperation(read, { title: 'abc' })
+    // Any param the input schema rejects; `read`'s positional is now widened to accept a
+    // citation, so the zod path is exercised through a flag instead.
+    const result = await runOperation(read, { title: '32', date: '2026' })
 
     expect(result.exit_code).toBe(2)
     if (result.envelope.ok) throw new Error('expected failure')

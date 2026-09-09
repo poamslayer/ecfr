@@ -134,16 +134,17 @@ ecfr corrections --title 32 --date 2025-01-01 # Filter corrections by title and 
 
 ### Read regulation text for a title
 
-Reads regulation text for one CFR title, optionally narrowed by part or section and served at a requested or defaulted issue date.
+Reads regulation text for one CFR title, optionally narrowed by part or section and served at a requested or defaulted issue date. The positional is either a bare CFR title number, as in `ecfr read 32 --part 2002 --section 2002.14`, or a citation in one of two forms, matched case-insensitively: `<title> CFR [§] <section>`, such as "32 CFR 2002.14", "32 CFR § 2002.14", or "48 CFR 252.204-7012"; and `<title> CFR part <part>`, such as "32 CFR part 2002". A citation derives the part from everything before the first dot of the section, reports the resolved title, part, and section in `params` alongside the citation text verbatim in `params.citation`, and cannot be combined with `--part` or `--section`. Because the eCFR API addresses parts and sections only, a subpart or appendix qualifier such as "32 CFR 2002.14 Subpart B", a section range such as "32 CFR 2002.14-2002.16", and an alternate reference such as "DFARS 252.204-7012" are each rejected with a USAGE error naming the part-level command to run instead.
 
 ```bash
 ecfr read 32 --part 2002 --section 2002.14 # Read one section at the latest issue date
 ecfr read 32 --date 2025-01-01 --xml # Write historical upstream XML unchanged
+ecfr read "32 CFR 2002.14" # Read a section by citation
 ```
 
 | Flag | Value | Description |
 | --- | --- | --- |
-| `title` (positional) | `<title>` | CFR title number. |
+| `title` (positional) | `<title>` | CFR title number, or a citation such as "32 CFR 2002.14" or "32 CFR part 2002". |
 | `--part` | `<n>` | Part number within the title. |
 | `--section` | `<n>` | Section number in full dotted form, e.g. 2002.14. |
 | `--date` | `<date>` | Issue date as YYYY-MM-DD. |
