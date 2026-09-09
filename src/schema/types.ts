@@ -6,6 +6,17 @@ import { z } from 'zod'
 import type { FlagKey } from './flags.js'
 
 // ---------------------------------------------------------------------------
+// Contract version
+// ---------------------------------------------------------------------------
+
+/**
+ * Version of the shape of the contract `capabilities` returns. Bumped when that shape
+ * changes — a top-level key added, removed, or re-typed — not when an operation is added,
+ * so a caller can tell whether its understanding of the contract is still current.
+ */
+export const schemaVersion = '1'
+
+// ---------------------------------------------------------------------------
 // Error codes and exit codes
 // ---------------------------------------------------------------------------
 
@@ -174,6 +185,8 @@ export interface Positional {
   name: string
   description: string
   schema: z.ZodType
+  /** Registered as `[name]` rather than `<name>`; the operation must handle its absence. */
+  optional?: boolean
 }
 
 export interface Example {

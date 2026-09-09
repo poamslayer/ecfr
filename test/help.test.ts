@@ -47,7 +47,8 @@ describe('--help', () => {
       expect(help).toContain('--json')
       expect(help).toContain('--dry-run')
       if (op.positional) {
-        expect(help).toContain(`<${op.positional.name}>`)
+        const token = op.positional.optional ? `[${op.positional.name}]` : `<${op.positional.name}>`
+        expect(help).toContain(token)
       }
     })
 

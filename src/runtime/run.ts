@@ -59,6 +59,71 @@ function applyBound(op: AnyOperation, data: unknown, maxBytes: number, warnings:
   return bounded.data
 }
 
+/**
+ * The CLI's own mask syntax, since the upstream API has none: a comma-separated list of
+ * top-level field names. Returns undefined when no mask was passed at all.
+ */
+function parseFieldMask(raw: unknown): string[] | undefined {
+  if (typeof raw !== 'string') return undefined
+  return raw.split(',').map(name => name.trim()).filter(name => name.length > 0)
+}
+
+function maskUsageError(op: AnyOperation, message: string, remediation: string, details: Record<string, unknown> = {}): CliError {
+  return new CliError('USAGE', message, { remediation, field: 'fields', details })
+}
+
+/**
+ * Keeps the requested top-level keys of Data, in the Data's own key order. Validation is
+ * against the Data that actually arrived: the output schemas are loose and one is
+ * recursive, so the response itself is the only reliable authority on what a caller may ask for.
+ */
+function emptyMaskError(op: AnyOperation): CliError {
+  return maskUsageError(
+    op,
+    `--fields for ${op.name} named no field.`,
+    `Pass --fields as a comma-separated list of top-level field names, or drop the flag to return every field. Run \`ecfr ${op.name} --help\`.`,
+  )
+}
+
+function applyFieldMask(op: AnyOperation, data: unknown, names: string[]): Record<string, unknown> {
+  if (names.length === 0) throw emptyMaskError(op)
+  if (data === null || typeof data !== 'object' || Array.isArray(data)) {
+    throw maskUsageError(
+      op,
+      `Data for ${op.name} is not an object, so it has no top-level fields to keep.`,
+      `Run \`ecfr ${op.name}\` without --fields.`,
+    )
+  }
+
+  const entries = Object.entries(data as Record<string, unknown>)
+  const available = entries.map(([key]) => key)
+  const unknown = names.filter(name => !available.includes(name))
+  if (unknown.length > 0) {
+    throw maskUsageError(
+      op,
+      `--fields named ${unknown.join(', ')}, which ${op.name} did not return.`,
+      `Pass --fields with names this operation returns: ${available.join(', ')}.`,
+      { unknown, available },
+    )
+  }
+
+  const requested = new Set(names)
+  return Object.fromEntries(entries.filter(([key]) => requested.has(key)))
+}
+
+/** Whether an `untrusted` dot path still resolves in the Data the caller is about to receive. */
+function untrustedPathSurvives(path: string, data: unknown): boolean {
+  const segments = path.split('.')
+  if (segments[0] !== 'data') return true
+  let current: unknown = data
+  for (const segment of segments.slice(1)) {
+    if (current === null || typeof current !== 'object' || Array.isArray(current)) return false
+    if (!Object.hasOwn(current, segment)) return false
+    current = (current as Record<string, unknown>)[segment]
+  }
+  return true
+}
+
 function shellQuote(value: unknown): string {
   const text = String(value)
   if (/^[A-Za-z0-9_./:-]+$/.test(text)) return text
@@ -129,6 +194,15 @@ export async function runOperation(
   }
 
   const input = parsed.data
+
+  // A mask that names no field is a pure usage error: it needs no response to detect, so it is
+  // rejected before any upstream request. A dry run and a real run therefore agree, and a typo
+  // does not cost the caller a full payload first. Unknown names still need the Data to check.
+  const declaredMask = parseFieldMask((input as Record<string, unknown>).fields)
+  if (declaredMask !== undefined && declaredMask.length === 0) {
+    return failureResult(op, emptyMaskError(op), trace)
+  }
+
   const requestFetch = (req: Parameters<typeof fetchUpstream>[0]) => fetchUpstream(req, {
     ...ctxOptions,
     requestId: trace.request_id,
@@ -149,11 +223,16 @@ export async function runOperation(
           details: { issues: outputCheck.error.issues.slice(0, 5) },
         })
       }
-      const boundedData = applyBound(op, data, maxBytes, warnings)
+      const mask = declaredMask
+      const maskedData = mask === undefined ? data : applyFieldMask(op, data, mask)
+      const untrusted = mask === undefined
+        ? untrustedPaths(op)
+        : untrustedPaths(op).filter(path => untrustedPathSurvives(path, maskedData))
+      const boundedData = applyBound(op, maskedData, maxBytes, warnings)
       const envelope = success({
         operation: op.name,
         ...trace,
-        untrusted: untrustedPaths(op),
+        untrusted,
         params: input as Record<string, unknown>,
         defaulted: [],
         warnings,
@@ -209,11 +288,16 @@ export async function runOperation(
     const currency = await resolveCurrency(op, params, ctx)
 
     const pagination = makePagination(op, data, params)
-    const boundedData = applyBound(op, data, maxBytes, warnings)
+    const mask = declaredMask
+    const maskedData = mask === undefined ? data : applyFieldMask(op, data, mask)
+    const untrusted = mask === undefined
+      ? untrustedPaths(op)
+      : untrustedPaths(op).filter(path => untrustedPathSurvives(path, maskedData))
+    const boundedData = applyBound(op, maskedData, maxBytes, warnings)
     const envelope = success({
       operation: op.name,
       ...trace,
-      untrusted: untrustedPaths(op),
+      untrusted,
       params,
       defaulted: request.defaulted,
       warnings,

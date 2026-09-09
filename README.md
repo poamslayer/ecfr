@@ -36,7 +36,7 @@ ecfr titles --json # Envelope with data.titles[]
 
 | Flag | Value | Description |
 | --- | --- | --- |
-| None | — | This operation has no operation-specific params. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 ### List all CFR agencies
 
@@ -50,6 +50,7 @@ ecfr agencies --filter defense # Keep matching agencies
 | Flag | Value | Description |
 | --- | --- | --- |
 | `--filter` | `<text>` | Keep only agencies whose name or short name contains this text. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 ### Browse hierarchy of a CFR title
 
@@ -64,6 +65,7 @@ ecfr structure 32 --date 2025-01-01 # Browse a historical issue date
 | --- | --- | --- |
 | `title` (positional) | `<title>` | CFR title number. |
 | `--date` | `<date>` | Issue date as YYYY-MM-DD. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 ### Search across all CFR text
 
@@ -81,6 +83,7 @@ ecfr search CUI --title 32 --per-page 5 # Search Title 32 five results at a time
 | `--agency` | `<slug>` | Agency slug from `ecfr agencies`. |
 | `--page` | `<n>` | Page number, starting at 1. |
 | `--per-page` | `<n>` | Results per page. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 ### Search result counts by hierarchy
 
@@ -95,6 +98,7 @@ ecfr counts cybersecurity --agency defense-department # Count matches for one ag
 | --- | --- | --- |
 | `query` (positional) | `<query>` | Text to count. |
 | `--agency` | `<slug>` | Agency slug from `ecfr agencies`. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 ### Track regulation amendments for a title
 
@@ -111,6 +115,7 @@ ecfr changes 32 --part 2002 --since 2025-01-01 # Narrow changes by part and issu
 | `--part` | `<n>` | Part number within the title. |
 | `--section` | `<n>` | Section number in full dotted form, e.g. 2002.14. |
 | `--since` | `<date>` | Only changes with an issue date on or after this YYYY-MM-DD. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 ### View CFR corrections and errata
 
@@ -125,6 +130,7 @@ ecfr corrections --title 32 --date 2025-01-01 # Filter corrections by title and 
 | --- | --- | --- |
 | `--title` | `<n>` | CFR title number. |
 | `--date` | `<date>` | Issue date as YYYY-MM-DD. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 ### Read regulation text for a title
 
@@ -142,18 +148,20 @@ ecfr read 32 --date 2025-01-01 --xml # Write historical upstream XML unchanged
 | `--section` | `<n>` | Section number in full dotted form, e.g. 2002.14. |
 | `--date` | `<date>` | Issue date as YYYY-MM-DD. |
 | `--xml` | `boolean` | Write the upstream XML to stdout unchanged instead of the envelope. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 ### Describe CLI capabilities
 
-Returns the machine-readable contract for operations, flags, policy, error codes, exit codes, and envelope schemas without using the network.
+Returns the machine-readable contract for operations, flags, policy, error codes, exit codes, and envelope schemas without using the network. Naming one operation returns the same document scoped to that operation alone.
 
 ```bash
 ecfr capabilities # Print the complete CLI capabilities as JSON
+ecfr capabilities read # Print the same document scoped to one operation
 ```
 
 | Flag | Value | Description |
 | --- | --- | --- |
-| None | — | This operation has no operation-specific params. |
+| `operation` (positional) | `[operation]` | Name of a single operation to describe. Omit for the full contract. |
 
 ## Global flags
 

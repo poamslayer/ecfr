@@ -13,6 +13,11 @@ function addFlag(command: Command, key: FlagKey): void {
   command.addOption(option)
 }
 
+/** `<name>` when the operation requires the positional, `[name]` when it is optional. */
+function positionalToken(positional: NonNullable<AnyOperation['positional']>): string {
+  return positional.optional ? `[${positional.name}]` : `<${positional.name}>`
+}
+
 function rawInputFor(op: AnyOperation, command: Command, positionalValue?: unknown): Record<string, unknown> {
   const merged = command.optsWithGlobals<Record<string, unknown>>()
   const input: Record<string, unknown> = {}
@@ -43,9 +48,9 @@ program
 for (const key of globalFlagKeys) addFlag(program, key)
 
 for (const op of operations) {
-  const usage = `${op.positional ? `<${op.positional.name}> ` : ''}[options]`
+  const usage = `${op.positional ? `${positionalToken(op.positional)} ` : ''}[options]`
   const command = program.command(op.name).description(op.summary).usage(usage)
-  if (op.positional) command.argument(`<${op.positional.name}>`, op.positional.description)
+  if (op.positional) command.argument(positionalToken(op.positional), op.positional.description)
   for (const key of op.flags) addFlag(command, key)
   for (const key of globalFlagKeys) addFlag(command, key)
   command.addHelpText('after', examplesBlock(op.examples))

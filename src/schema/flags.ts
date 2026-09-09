@@ -55,6 +55,12 @@ export const flags = {
     schema: z.coerce.number().int().nonnegative().default(262144),
     global: true,
   },
+  fields: {
+    name: 'fields',
+    value: '<list>',
+    description: 'Comma-separated list of top-level field names to keep in "data". Omit to return every field.',
+    schema: z.string(),
+  },
   title: {
     name: 'title',
     value: '<n>',

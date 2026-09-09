@@ -31,8 +31,8 @@ export const structure = defineOperation({
   summary: 'Browse hierarchy of a CFR title',
   description: 'Returns the hierarchy of one CFR title at an issue date, defaulting to the latest issue date published for that title.',
   positional: { name: 'title', description: 'CFR title number.', schema: flags.title.schema },
-  flags: ['date'],
-  input: flagObject(['date']).extend({ title: flags.title.schema }),
+  flags: ['date', 'fields'],
+  input: flagObject(['date', 'fields']).extend({ title: flags.title.schema }),
   network: 'remote',
   titleScoped: true,
   request: async (input, ctx) => {

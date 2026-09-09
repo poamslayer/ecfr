@@ -4,6 +4,7 @@
     "name": "ecfr",
     "version": "0.3.0"
   },
+  "schema_version": "1",
   "targets": {
     "ecfr": {
       "name": "ecfr",
@@ -110,7 +111,13 @@
       "summary": "List all CFR titles",
       "description": "Lists the 50 CFR titles with their number, name, latest amendment date, latest issue date, and the date the eCFR says each is up to date as of. Reserved titles are included in data and hidden in the table.",
       "positional": null,
-      "flags": [],
+      "flags": [
+        {
+          "name": "--fields",
+          "value": "<list>",
+          "description": "Comma-separated list of top-level field names to keep in \"data\". Omit to return every field."
+        }
+      ],
       "network": "remote",
       "untrusted": [
         "data"
@@ -210,6 +217,11 @@
           "name": "--filter",
           "value": "<text>",
           "description": "Keep only agencies whose name or short name contains this text."
+        },
+        {
+          "name": "--fields",
+          "value": "<list>",
+          "description": "Comma-separated list of top-level field names to keep in \"data\". Omit to return every field."
         }
       ],
       "network": "remote",
@@ -304,13 +316,19 @@
       "description": "Returns the hierarchy of one CFR title at an issue date, defaulting to the latest issue date published for that title.",
       "positional": {
         "name": "title",
-        "description": "CFR title number."
+        "description": "CFR title number.",
+        "optional": false
       },
       "flags": [
         {
           "name": "--date",
           "value": "<date>",
           "description": "Issue date as YYYY-MM-DD."
+        },
+        {
+          "name": "--fields",
+          "value": "<list>",
+          "description": "Comma-separated list of top-level field names to keep in \"data\". Omit to return every field."
         }
       ],
       "network": "remote",
@@ -363,7 +381,8 @@
       "description": "Searches regulation text, optionally narrowing by CFR title or agency, and returns paginated excerpts.",
       "positional": {
         "name": "query",
-        "description": "Text to search for."
+        "description": "Text to search for.",
+        "optional": false
       },
       "flags": [
         {
@@ -385,6 +404,11 @@
           "name": "--per-page",
           "value": "<n>",
           "description": "Results per page."
+        },
+        {
+          "name": "--fields",
+          "value": "<list>",
+          "description": "Comma-separated list of top-level field names to keep in \"data\". Omit to return every field."
         }
       ],
       "network": "remote",
@@ -510,13 +534,19 @@
       "description": "Counts matching regulation text and groups the totals through the CFR hierarchy, optionally for one agency.",
       "positional": {
         "name": "query",
-        "description": "Text to count."
+        "description": "Text to count.",
+        "optional": false
       },
       "flags": [
         {
           "name": "--agency",
           "value": "<slug>",
           "description": "Agency slug from `ecfr agencies`."
+        },
+        {
+          "name": "--fields",
+          "value": "<list>",
+          "description": "Comma-separated list of top-level field names to keep in \"data\". Omit to return every field."
         }
       ],
       "network": "remote",
@@ -629,7 +659,8 @@
       "description": "Lists content versions for one CFR title, optionally narrowed by part, section, or earliest issue date.",
       "positional": {
         "name": "title",
-        "description": "CFR title number."
+        "description": "CFR title number.",
+        "optional": false
       },
       "flags": [
         {
@@ -646,6 +677,11 @@
           "name": "--since",
           "value": "<date>",
           "description": "Only changes with an issue date on or after this YYYY-MM-DD."
+        },
+        {
+          "name": "--fields",
+          "value": "<list>",
+          "description": "Comma-separated list of top-level field names to keep in \"data\". Omit to return every field."
         }
       ],
       "network": "remote",
@@ -730,6 +766,11 @@
           "name": "--date",
           "value": "<date>",
           "description": "Issue date as YYYY-MM-DD."
+        },
+        {
+          "name": "--fields",
+          "value": "<list>",
+          "description": "Comma-separated list of top-level field names to keep in \"data\". Omit to return every field."
         }
       ],
       "network": "remote",
@@ -817,7 +858,8 @@
       "description": "Reads regulation text for one CFR title, optionally narrowed by part or section and served at a requested or defaulted issue date.",
       "positional": {
         "name": "title",
-        "description": "CFR title number."
+        "description": "CFR title number.",
+        "optional": false
       },
       "flags": [
         {
@@ -838,6 +880,11 @@
         {
           "name": "--xml",
           "description": "Write the upstream XML to stdout unchanged instead of the envelope."
+        },
+        {
+          "name": "--fields",
+          "value": "<list>",
+          "description": "Comma-separated list of top-level field names to keep in \"data\". Omit to return every field."
         }
       ],
       "network": "remote",
@@ -930,8 +977,12 @@
       "name": "capabilities",
       "kind": "introspect",
       "summary": "Describe CLI capabilities",
-      "description": "Returns the machine-readable contract for operations, flags, policy, error codes, exit codes, and envelope schemas without using the network.",
-      "positional": null,
+      "description": "Returns the machine-readable contract for operations, flags, policy, error codes, exit codes, and envelope schemas without using the network. Naming one operation returns the same document scoped to that operation alone.",
+      "positional": {
+        "name": "operation",
+        "description": "Name of a single operation to describe. Omit for the full contract.",
+        "optional": true
+      },
       "flags": [],
       "network": "none",
       "untrusted": [],
@@ -941,6 +992,10 @@
         {
           "command": "ecfr capabilities",
           "description": "Print the complete CLI capabilities as JSON"
+        },
+        {
+          "command": "ecfr capabilities read",
+          "description": "Print the same document scoped to one operation"
         }
       ],
       "output_schema": {
@@ -962,6 +1017,9 @@
               "version"
             ],
             "additionalProperties": {}
+          },
+          "schema_version": {
+            "type": "string"
           },
           "targets": {
             "type": "object",
@@ -1029,6 +1087,7 @@
         },
         "required": [
           "cli",
+          "schema_version",
           "targets",
           "default_target",
           "environment",

@@ -19,6 +19,9 @@
       ],
       "additionalProperties": {}
     },
+    "schema_version": {
+      "type": "string"
+    },
     "targets": {
       "type": "object",
       "propertyNames": {
@@ -85,6 +88,7 @@
   },
   "required": [
     "cli",
+    "schema_version",
     "targets",
     "default_target",
     "environment",

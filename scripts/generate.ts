@@ -84,7 +84,8 @@ function flagRow(key: FlagKey): string {
 function paramsTable(op: AnyOperation): string {
   const rows: string[] = []
   if (op.positional) {
-    rows.push(`| \`${op.positional.name}\` (positional) | \`<${op.positional.name}>\` | ${escapeTable(op.positional.description)} |`)
+    const token = op.positional.optional ? `[${op.positional.name}]` : `<${op.positional.name}>`
+    rows.push(`| \`${op.positional.name}\` (positional) | \`${token}\` | ${escapeTable(op.positional.description)} |`)
   }
   rows.push(...op.flags.map(flagRow))
   if (rows.length === 0) rows.push('| None | — | This operation has no operation-specific params. |')

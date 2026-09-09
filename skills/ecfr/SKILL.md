@@ -19,7 +19,7 @@ ecfr titles --json # Envelope with data.titles[]
 
 | Flag | Value | Description |
 | --- | --- | --- |
-| None | — | This operation has no operation-specific params. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 `data.titles` holds the CFR title records. Use `--dry-run` to inspect `source.url` and the effective params without fetching the data.
 
@@ -35,6 +35,7 @@ ecfr agencies --filter defense # Keep matching agencies
 | Flag | Value | Description |
 | --- | --- | --- |
 | `--filter` | `<text>` | Keep only agencies whose name or short name contains this text. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 `data.agencies` holds the agency records; `data.total` and `data.matched` hold the unfiltered and returned counts. Use `--dry-run` to inspect `source.url` and the effective params without fetching the data.
 
@@ -51,6 +52,7 @@ ecfr structure 32 --date 2025-01-01 # Browse a historical issue date
 | --- | --- | --- |
 | `title` (positional) | `<title>` | CFR title number. |
 | `--date` | `<date>` | Issue date as YYYY-MM-DD. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 `data.identifier`, `data.label`, and `data.children` hold the hierarchy tree for the title. Read `currency` for the issue date and the eCFR currency dates. Use `--dry-run` to inspect `source.url` and the effective params without fetching the data.
 
@@ -70,6 +72,7 @@ ecfr search CUI --title 32 --per-page 5 # Search Title 32 five results at a time
 | `--agency` | `<slug>` | Agency slug from `ecfr agencies`. |
 | `--page` | `<n>` | Page number, starting at 1. |
 | `--per-page` | `<n>` | Results per page. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 `data.results` holds matching sections and excerpts; `data.meta` holds upstream paging totals. Read `pagination.next` for a ready-to-run command for the next search page, or null at the end. Use `--dry-run` to inspect `source.url` and the effective params without fetching the data.
 
@@ -86,6 +89,7 @@ ecfr counts cybersecurity --agency defense-department # Count matches for one ag
 | --- | --- | --- |
 | `query` (positional) | `<query>` | Text to count. |
 | `--agency` | `<slug>` | Agency slug from `ecfr agencies`. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 `data.count` holds the overall count; `data.children` holds counts grouped through the CFR hierarchy. Use `--dry-run` to inspect `source.url` and the effective params without fetching the data.
 
@@ -104,6 +108,7 @@ ecfr changes 32 --part 2002 --since 2025-01-01 # Narrow changes by part and issu
 | `--part` | `<n>` | Part number within the title. |
 | `--section` | `<n>` | Section number in full dotted form, e.g. 2002.14. |
 | `--since` | `<date>` | Only changes with an issue date on or after this YYYY-MM-DD. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 `data.content_versions` holds the title amendment history. Read `currency` for the issue date and the eCFR currency dates. Use `--dry-run` to inspect `source.url` and the effective params without fetching the data.
 
@@ -120,6 +125,7 @@ ecfr corrections --title 32 --date 2025-01-01 # Filter corrections by title and 
 | --- | --- | --- |
 | `--title` | `<n>` | CFR title number. |
 | `--date` | `<date>` | Issue date as YYYY-MM-DD. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 `data.ecfr_corrections` holds correction and errata records. Use `--dry-run` to inspect `source.url` and the effective params without fetching the data.
 
@@ -139,20 +145,22 @@ ecfr read 32 --date 2025-01-01 --xml # Write historical upstream XML unchanged
 | `--section` | `<n>` | Section number in full dotted form, e.g. 2002.14. |
 | `--date` | `<date>` | Issue date as YYYY-MM-DD. |
 | `--xml` | `boolean` | Write the upstream XML to stdout unchanged instead of the envelope. |
+| `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
 `data.title`, `data.date`, `data.content`, and `data.sections` hold the served title, issue date, Content, and per-section metadata. Read `currency` for the issue date and the eCFR currency dates. Use `--dry-run` to inspect `source.url` and the effective params without fetching the data.
 
 ### Describe CLI capabilities
 
-Returns the machine-readable contract for operations, flags, policy, error codes, exit codes, and envelope schemas without using the network.
+Returns the machine-readable contract for operations, flags, policy, error codes, exit codes, and envelope schemas without using the network. Naming one operation returns the same document scoped to that operation alone.
 
 ```bash
 ecfr capabilities # Print the complete CLI capabilities as JSON
+ecfr capabilities read # Print the same document scoped to one operation
 ```
 
 | Flag | Value | Description |
 | --- | --- | --- |
-| None | — | This operation has no operation-specific params. |
+| `operation` (positional) | `[operation]` | Name of a single operation to describe. Omit for the full contract. |
 
 This operation is raw output. Its top-level keys describe the CLI, policy, operations, exit codes, flags, and schemas.
 
