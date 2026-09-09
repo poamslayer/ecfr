@@ -164,6 +164,24 @@ ecfr capabilities read # Print the same document scoped to one operation
 
 This operation is raw output. Its top-level keys describe the CLI, policy, operations, exit codes, flags, and schemas.
 
+## Global flags
+
+Every operation accepts these.
+
+| Flag | Value | Description |
+| --- | --- | --- |
+| `--json` | `boolean` | Write the JSON envelope to stdout. Alias for --output json; retained for compatibility. |
+| `--output` | `<format>` | Output format: "json" for the envelope, "text" for human-readable rendering. Defaults to json. Overrides --json; falls back to the ECFR_OUTPUT environment variable. |
+| `--dry-run` | `boolean` | Resolve the request and return the envelope without fetching the data. Only the small title list is read, to resolve a defaulted date. |
+| `--max-bytes` | `<n>` | Maximum serialized size of "data" in bytes before the response is truncated with a warning. 0 disables the bound. |
+
+## Environment
+
+| Variable | Description |
+| --- | --- |
+| `ECFR_OUTPUT` | Default output format when neither --output nor --json is passed. |
+| `ECFR_AGENT` | Self-reported agent name, sent as X-Agent-Name on upstream calls and echoed in the envelope. For tracing only; nothing is authorized on it. |
+
 ## Output
 
 The JSON envelope uses these top-level keys:
@@ -184,6 +202,12 @@ The JSON envelope uses these top-level keys:
 - `dry_run`: whether the operation stopped before fetching data.
 - `data`: the operation-specific data on success.
 - `error`: the error code, message, optional field, retryability, remediation, and details on failure.
+
+| Code | Meaning |
+| --- | --- |
+| `RETRIED` | The request succeeded only after the CLI retried it. |
+| `OUTPUT_SCHEMA_MISMATCH` | eCFR returned a field shape the CLI did not expect. The data is still returned. |
+| `TRUNCATED` | Data was cut to stay within the byte bound. The answer is partial; raise or disable the bound with --max-bytes, or narrow the response with --fields. |
 
 The fixed network policy makes 2 retries after the first attempt, waits 30 seconds for headers, and allows 5 minutes for the body.
 
