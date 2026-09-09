@@ -41,10 +41,12 @@ ecfr agencies --filter defense # Keep matching agencies
 
 ### Browse hierarchy of a CFR title
 
-Returns the hierarchy of one CFR title at an issue date, defaulting to the latest issue date published for that title.
+Returns the hierarchy of one CFR title at an issue date, complete through one named level rather than cut to a byte budget. --level accepts title, subtitle, chapter, subchapter, part, subpart, subject_group, section, appendix, hed1, all and defaults to chapter, or part when --under is given; --level all returns the whole tree. A node whose children were not returned carries withheld_children with the count, so a caller always knows where more exists. --under narrows Data to the subtree at one identifier; the shallowest match wins, so --under 2 finds chapter 2 rather than a part numbered 2 deeper in the tree, and a tie at one level is qualified as <type>:<identifier>, such as chapter:2.
 
 ```bash
-ecfr structure 32 # Browse the latest hierarchy for Title 32
+ecfr structure 32 # List Title 32 through its chapters
+ecfr structure 48 --under 2 # Drill into chapter 2 and list its parts, including DFARS part 252
+ecfr structure 32 --under chapter:XX --level all # Return the complete subtree under one chapter, qualified by type
 ecfr structure 32 --date 2025-01-01 # Browse a historical issue date
 ```
 
@@ -52,9 +54,11 @@ ecfr structure 32 --date 2025-01-01 # Browse a historical issue date
 | --- | --- | --- |
 | `title` (positional) | `<title>` | CFR title number. |
 | `--date` | `<date>` | Issue date as YYYY-MM-DD. |
+| `--level` | `<type>` | Deepest structure type to return: title, subtitle, chapter, subchapter, part, subpart, subject_group, section, appendix, hed1, all. Defaults to chapter, or part with --under. |
+| `--under` | `<identifier>` | Return the subtree rooted at this identifier. The shallowest match wins, so `--under 2` finds chapter 2 rather than a part numbered 2 deeper in the tree. Qualify it as `<type>:<identifier>`, such as `chapter:2`, when one level holds several nodes with the same identifier. |
 | `--fields` | `<list>` | Comma-separated list of top-level field names to keep in "data". Omit to return every field. |
 
-`data.identifier`, `data.label`, and `data.children` hold the hierarchy tree for the title. Read `currency` for the issue date and the eCFR currency dates. Use `--dry-run` to inspect `source.url` and the effective params without fetching the data.
+`data.identifier`, `data.label`, and `data.children` hold the requested hierarchy. `withheld_children` gives the immediate child count at every pruned branch. Read `currency` for the issue date and the eCFR currency dates. Use `--dry-run` to inspect `source.url` and the effective params without fetching the data.
 
 ### Search across all CFR text
 
@@ -172,6 +176,7 @@ Every operation accepts these.
 | Flag | Value | Description |
 | --- | --- | --- |
 | `--json` | `boolean` | Write the JSON envelope to stdout. Alias for --output json; retained for compatibility. |
+| `--pretty` | `boolean` | Indent the JSON envelope for a human reader. Agents should leave this off; it makes a deep response about 2.3 times larger. |
 | `--output` | `<format>` | Output format: "json" for the envelope, "text" for human-readable rendering. Defaults to json. Overrides --json; falls back to the ECFR_OUTPUT environment variable. |
 | `--dry-run` | `boolean` | Resolve the request and return the envelope without fetching the data. Only the small title list is read, to resolve a defaulted date. |
 | `--max-bytes` | `<n>` | Maximum serialized size of "data" in bytes before the response is truncated with a warning. 0 disables the bound. |
@@ -208,7 +213,7 @@ The JSON envelope uses these top-level keys:
 | --- | --- |
 | `RETRIED` | The request succeeded only after the CLI retried it. |
 | `OUTPUT_SCHEMA_MISMATCH` | eCFR returned a field shape the CLI did not expect. The data is still returned. |
-| `TRUNCATED` | Data was cut to stay within the byte bound. The answer is partial; raise or disable the bound with --max-bytes, or narrow the response with --fields. |
+| `TRUNCATED` | Data was cut to stay within the byte bound. The answer is partial; narrow the question, use --fields, or raise or disable --max-bytes. |
 
 The fixed network policy makes 2 retries after the first attempt, waits 30 seconds for headers, and allows 5 minutes for the body.
 

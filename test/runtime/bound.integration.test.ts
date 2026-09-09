@@ -10,7 +10,7 @@ import { fixtureFetch, loadFixture } from '../helpers/fetch-stub.js'
 const repoRoot = path.resolve(import.meta.dirname, '../..')
 
 describe('Data byte bound', () => {
-  it('bounds the largest-response operation at 256 KiB by default', async () => {
+  it('keeps default structure Data under 256 KiB without truncation', async () => {
     const result = await runOperation(
       structure,
       { title: '32', date: '2026-08-17' },
@@ -19,17 +19,14 @@ describe('Data byte bound', () => {
 
     if (!result.envelope.ok) throw new Error('expected success')
     expect(new TextEncoder().encode(JSON.stringify(result.envelope.data)).byteLength).toBeLessThanOrEqual(262_144)
-    expect(result.envelope.warnings).toContainEqual(expect.objectContaining({
-      code: 'TRUNCATED',
-      details: expect.objectContaining({ max_bytes: 262_144 }),
-    }))
+    expect(result.envelope.warnings).not.toContainEqual(expect.objectContaining({ code: 'TRUNCATED' }))
   })
 
   it('bounds structure Data and adds the dedicated Warning', async () => {
     const maxBytes = 1024
     const result = await runOperation(
       structure,
-      { title: '32', date: '2026-08-17' },
+      { title: '32', date: '2026-08-17', level: 'all' },
       { fetch: fixtureFetch(), maxBytes },
     )
 
@@ -48,7 +45,7 @@ describe('Data byte bound', () => {
   it('adds no truncation Warning when an explicit larger bound fits the Data', async () => {
     const result = await runOperation(
       structure,
-      { title: '32', date: '2026-08-17' },
+      { title: '32', date: '2026-08-17', level: 'all' },
       { fetch: fixtureFetch(), maxBytes: 2_000_000 },
     )
 

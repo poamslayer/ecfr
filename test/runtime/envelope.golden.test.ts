@@ -64,9 +64,7 @@ describe('envelope golden', () => {
     })
   }
 
-  // structure is exercised separately below (see the BUG note); every other remote op
-  // must produce data that validates strictly and no output-schema warning.
-  for (const op of remoteOps.filter(candidate => candidate.name !== 'structure')) {
+  for (const op of remoteOps) {
     it(`data for ${op.name} strictly validates its output schema with no warnings`, async () => {
       const result = await runOperation(op, specs[op.name], { fetch: fixtureFetch() })
       if (!result.envelope.ok) throw new Error(`expected success for ${op.name}`)
@@ -75,10 +73,10 @@ describe('envelope golden', () => {
     })
   }
 
-  it('bounded data for structure still validates its output schema and carries a truncation warning', async () => {
+  it('default Data for structure is complete at the requested level', async () => {
     const result = await runOperation(structure, specs.structure, { fetch: fixtureFetch() })
     if (!result.envelope.ok) throw new Error('expected success for structure')
     expect(structure.output.safeParse(result.envelope.data).success).toBe(true)
-    expect(result.envelope.warnings).toContainEqual(expect.objectContaining({ code: 'TRUNCATED' }))
+    expect(result.envelope.warnings).not.toContainEqual(expect.objectContaining({ code: 'TRUNCATED' }))
   })
 })
