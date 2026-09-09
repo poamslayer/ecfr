@@ -24,6 +24,20 @@ describe('capabilities operation', () => {
     for (const op of operations) expect(names).toContain(op.name)
 
     expect(parsed.policy.retries).toBe(2)
+    expect(parsed.targets).toEqual({
+      ecfr: {
+        name: 'ecfr',
+        base_url: 'https://www.ecfr.gov',
+        description: 'The public eCFR API at ecfr.gov.',
+      },
+    })
+    expect(parsed.default_target).toBe('ecfr')
+    expect(parsed.environment.map((entry: { name: string }) => entry.name)).toEqual([
+      'ECFR_OUTPUT',
+      'ECFR_AGENT',
+    ])
+    expect(parsed.operations.find((op: { name: string }) => op.name === 'read').untrusted)
+      .toEqual(['data.content', 'data.sections'])
     for (const op of parsed.operations) {
       expect(op.output_schema.type).toBe('object')
       expect(typeof op.output_schema.$schema).toBe('string')

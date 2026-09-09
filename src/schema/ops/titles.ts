@@ -19,13 +19,13 @@ export const titles = defineOperation({
   summary: 'List all CFR titles',
   description:
     'Lists the 50 CFR titles with their number, name, latest amendment date, latest issue date, and the date the eCFR says each is up to date as of. Reserved titles are included in data and hidden in the table.',
-  flags: [],
-  input: flagObject([]),
+  flags: ['fields'],
+  input: flagObject(['fields']),
   network: 'remote',
-  request: async () => ({
+  request: async input => ({
     path: '/api/versioner/v1/titles',
     accept: 'json',
-    params: {},
+    params: input,
     defaulted: [],
   }),
   output: z.looseObject({

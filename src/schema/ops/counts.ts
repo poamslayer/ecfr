@@ -40,8 +40,8 @@ export const counts = defineOperation({
   summary: 'Search result counts by hierarchy',
   description: 'Counts matching regulation text and groups the totals through the CFR hierarchy, optionally for one agency.',
   positional: { name: 'query', description: 'Text to count.', schema: z.string().min(1) },
-  flags: ['agency'],
-  input: flagObject(['agency']).extend({ query: z.string().min(1) }),
+  flags: ['agency', 'fields'],
+  input: flagObject(['agency', 'fields']).extend({ query: z.string().min(1) }),
   network: 'remote',
   request: async input => {
     const query = new URLSearchParams({ query: input.query })

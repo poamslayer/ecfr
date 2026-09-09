@@ -1,7 +1,14 @@
 {
   "ok": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "operation": "read",
+  "request_id": "<request_id>",
+  "agent": null,
+  "target": "ecfr",
+  "untrusted": [
+    "data.content",
+    "data.sections"
+  ],
   "params": {
     "part": "2002",
     "section": "2002.14",

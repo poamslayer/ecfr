@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto'
+import packageJson from '../../package.json'
 import { policy } from '../schema/policy.js'
 import type { UpstreamRequest, UpstreamResponse } from '../schema/types.js'
 import { CliError } from './errors.js'
@@ -5,6 +7,8 @@ import { CliError } from './errors.js'
 export interface FetchDeps {
   fetch?: typeof globalThis.fetch
   sleep?: (milliseconds: number) => Promise<void>
+  requestId?: string
+  agent?: string | null
 }
 
 const defaultSleep = (milliseconds: number) => new Promise<void>(resolve => setTimeout(resolve, milliseconds))
@@ -60,6 +64,7 @@ export async function fetchUpstream(req: UpstreamRequest, deps: FetchDeps = {}):
   const sleep = deps.sleep ?? defaultSleep
   const url = `${policy.base_url}${req.path}`
   const maxAttempts = policy.retries + 1
+  const requestId = deps.requestId ?? randomUUID()
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const controller = new AbortController()
@@ -70,6 +75,9 @@ export async function fetchUpstream(req: UpstreamRequest, deps: FetchDeps = {}):
           headers: {
             Accept: req.accept === 'json' ? 'application/json' : 'application/xml',
             'Accept-Encoding': 'gzip, deflate',
+            'User-Agent': `ecfr/${packageJson.version} (+https://github.com/poamslayer/ecfr)`,
+            'X-Request-Id': requestId,
+            ...(deps.agent ? { 'X-Agent-Name': deps.agent } : {}),
           },
           signal: controller.signal,
         }),
@@ -88,7 +96,6 @@ export async function fetchUpstream(req: UpstreamRequest, deps: FetchDeps = {}):
     if (response.status === 404) {
       throw new CliError('NOT_FOUND', `eCFR API returned 404 for ${req.path}`, {
         status: 404,
-        remediation: 'Run `ecfr titles` to list valid title numbers.',
         details: attemptsDetails(req, attempt),
       })
     }

@@ -19,6 +19,57 @@
       ],
       "additionalProperties": {}
     },
+    "schema_version": {
+      "type": "string"
+    },
+    "targets": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "base_url": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "base_url",
+          "description"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "default_target": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ],
+        "additionalProperties": false
+      }
+    },
     "operations": {
       "type": "array",
       "items": {
@@ -37,6 +88,10 @@
   },
   "required": [
     "cli",
+    "schema_version",
+    "targets",
+    "default_target",
+    "environment",
     "operations"
   ],
   "additionalProperties": {}

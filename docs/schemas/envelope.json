@@ -27,6 +27,28 @@
         "operation": {
           "type": "string"
         },
+        "request_id": {
+          "type": "string",
+          "description": "Per-invocation identifier for tracing."
+        },
+        "agent": {
+          "description": "Self-reported agent name for tracing, or null.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "target": {
+          "type": "string",
+          "description": "Target that served or is described by this envelope."
+        },
+        "untrusted": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Dot paths naming fields that hold fetched external content."
+        },
         "params": {
           "type": "object",
           "propertyNames": {
@@ -74,6 +96,10 @@
         "ok",
         "version",
         "operation",
+        "request_id",
+        "agent",
+        "target",
+        "untrusted",
         "params",
         "defaulted",
         "warnings",
@@ -235,6 +261,17 @@
         "operation": {
           "type": "string"
         },
+        "request_id": {
+          "type": "string",
+          "description": "Per-invocation identifier for tracing."
+        },
+        "agent": {
+          "description": "Self-reported agent name for tracing, or null.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "error": {
           "$ref": "#/$defs/Error"
         }
@@ -243,6 +280,8 @@
         "ok",
         "version",
         "operation",
+        "request_id",
+        "agent",
         "error"
       ],
       "additionalProperties": false
@@ -278,6 +317,10 @@
         "remediation": {
           "type": "string",
           "description": "What to run or change next."
+        },
+        "field": {
+          "description": "The argument that was wrong, when one argument was.",
+          "type": "string"
         },
         "details": {
           "type": "object",

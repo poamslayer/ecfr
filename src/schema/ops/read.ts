@@ -17,9 +17,10 @@ export const read = defineOperation({
   summary: 'Read regulation text for a title',
   description: 'Reads regulation text for one CFR title, optionally narrowed by part or section and served at a requested or defaulted issue date.',
   positional: { name: 'title', description: 'CFR title number.', schema: flags.title.schema },
-  flags: ['part', 'section', 'date', 'xml'],
-  input: flagObject(['part', 'section', 'date', 'xml']).extend({ title: flags.title.schema }),
+  flags: ['part', 'section', 'date', 'xml', 'fields'],
+  input: flagObject(['part', 'section', 'date', 'xml', 'fields']).extend({ title: flags.title.schema }),
   network: 'remote',
+  untrusted: ['data.content', 'data.sections'],
   titleScoped: true,
   rawOutput: 'xml',
   request: async (input, ctx) => {

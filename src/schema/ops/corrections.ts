@@ -18,8 +18,8 @@ export const corrections = defineOperation({
   kind: 'list',
   summary: 'View CFR corrections and errata',
   description: 'Lists eCFR corrections and errata, optionally filtered by CFR title number and date.',
-  flags: ['title', 'date'],
-  input: flagObject(['title', 'date']),
+  flags: ['title', 'date', 'fields'],
+  input: flagObject(['title', 'date', 'fields']),
   network: 'remote',
   request: async input => {
     const query = new URLSearchParams()

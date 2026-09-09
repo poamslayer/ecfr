@@ -118,7 +118,7 @@ describe('runtime errors', () => {
       retryable: false,
       remediation: 'Run `ecfr titles` to list valid title numbers.',
       details: {},
-    })
+    }, { request_id: 'test-request-id', agent: null })
 
     it('writes exactly one stderr line in JSON mode', () => {
       const stdoutChunks: string[] = []
@@ -133,10 +133,11 @@ describe('runtime errors', () => {
       expect(stderrChunks).toEqual([`error [NOT_FOUND]: ${errorEnvelope.error.message}\n`])
     })
 
-    it('adds a hint line in TTY mode and writes nothing to stdout', () => {
+    it('adds a hint line in explicit text mode and writes nothing to stdout', () => {
       const stdoutChunks: string[] = []
       const stderrChunks: string[] = []
       writeResult({ envelope: errorEnvelope, exit_code: 3 }, {
+        output: 'text',
         json: false,
         isTTY: true,
         stdout: { write: chunk => stdoutChunks.push(String(chunk)) },

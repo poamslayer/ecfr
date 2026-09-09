@@ -30,5 +30,6 @@ export function findOperation(name: string): AnyOperation | undefined {
 
 export * from './types.js'
 export * from './flags.js'
+export * from './env.js'
 export * from './policy.js'
 export { lintOperations, formatLintIssues, rules as lintRules } from './lint.js'

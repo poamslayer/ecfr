@@ -17,8 +17,8 @@ export const agencies = defineOperation({
   kind: 'list',
   summary: 'List all CFR agencies',
   description: 'Lists agencies represented in the eCFR, with an optional case-insensitive filter over each agency name and short name.',
-  flags: ['filter'],
-  input: flagObject(['filter']),
+  flags: ['filter', 'fields'],
+  input: flagObject(['filter', 'fields']),
   network: 'remote',
   request: async input => ({
     path: '/api/admin/v1/agencies.json',

@@ -19,8 +19,8 @@ export const changes = defineOperation({
   summary: 'Track regulation amendments for a title',
   description: 'Lists content versions for one CFR title, optionally narrowed by part, section, or earliest issue date.',
   positional: { name: 'title', description: 'CFR title number.', schema: flags.title.schema },
-  flags: ['part', 'section', 'since'],
-  input: flagObject(['part', 'section', 'since']).extend({ title: flags.title.schema }),
+  flags: ['part', 'section', 'since', 'fields'],
+  input: flagObject(['part', 'section', 'since', 'fields']).extend({ title: flags.title.schema }),
   network: 'remote',
   titleScoped: true,
   request: async input => {

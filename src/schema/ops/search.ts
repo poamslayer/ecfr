@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { flagObject } from '../flags.js'
 import { defineOperation } from '../types.js'
 
-const inputSchema = flagObject(['title', 'agency', 'page', 'perPage']).extend({ query: z.string().min(1) })
+const inputSchema = flagObject(['title', 'agency', 'page', 'perPage', 'fields']).extend({ query: z.string().min(1) })
 
 const searchResultSchema = z.looseObject({
   hierarchy: z.looseObject({ title: z.string(), section: z.string() }),
@@ -29,9 +29,10 @@ export const search = defineOperation({
   summary: 'Search across all CFR text',
   description: 'Searches regulation text, optionally narrowing by CFR title or agency, and returns paginated excerpts.',
   positional: { name: 'query', description: 'Text to search for.', schema: z.string().min(1) },
-  flags: ['title', 'agency', 'page', 'perPage'],
+  flags: ['title', 'agency', 'page', 'perPage', 'fields'],
   input: inputSchema,
   network: 'remote',
+  untrusted: ['data.results'],
   request: async input => {
     const query = new URLSearchParams({ query: input.query })
     if (input.title) query.set('hierarchy[title]', input.title)
