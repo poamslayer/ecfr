@@ -10,6 +10,7 @@ interface Writable {
 export interface OutputOptions {
   output?: unknown
   json: boolean
+  pretty?: boolean
   environment?: EnvValues
   isTTY: boolean
   stdout: Writable
@@ -28,7 +29,7 @@ export function writeResult(result: RunResult, options: OutputOptions): void {
       : options.environment?.output ?? 'json'
   const jsonMode = format === 'json'
   if (!result.envelope.ok) {
-    if (jsonMode) options.stdout.write(`${JSON.stringify(result.envelope, null, 2)}\n`)
+    if (jsonMode) options.stdout.write(`${JSON.stringify(result.envelope, null, options.pretty === true ? 2 : undefined)}\n`)
     options.stderr.write(`error [${result.envelope.error.code}]: ${result.envelope.error.message}\n`)
     if (!jsonMode) options.stderr.write(`hint: ${result.envelope.error.remediation}\n`)
     return
@@ -40,7 +41,7 @@ export function writeResult(result: RunResult, options: OutputOptions): void {
   }
 
   if (jsonMode) {
-    options.stdout.write(`${JSON.stringify(result.envelope, null, 2)}\n`)
+    options.stdout.write(`${JSON.stringify(result.envelope, null, options.pretty === true ? 2 : undefined)}\n`)
     return
   }
 

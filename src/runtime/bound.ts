@@ -21,32 +21,18 @@ function byteLength(value: string): number {
   return encoder.encode(value).byteLength
 }
 
-function fitString(value: string, maxBytes: number): WalkResult | null {
-  const whole = JSON.stringify(value)
-  const wholeBytes = byteLength(whole)
-  if (wholeBytes <= maxBytes) {
-    return { json: whole, bytes: wholeBytes, truncated: false, dropped: 0 }
+/** Count a value plus every array entry or object-property value nested inside it. */
+function countValues(value: unknown): number {
+  if (Array.isArray(value)) {
+    return 1 + value.reduce((total, child) => total + countValues(child), 0)
   }
-
-  if (maxBytes < 2) return null
-
-  const codePoints = Array.from(value)
-  let low = 0
-  let high = codePoints.length
-  while (low < high) {
-    const middle = Math.ceil((low + high) / 2)
-    const candidate = JSON.stringify(codePoints.slice(0, middle).join(''))
-    if (byteLength(candidate) <= maxBytes) low = middle
-    else high = middle - 1
+  if (value !== null && typeof value === 'object') {
+    return 1 + Object.values(value).reduce((total, child) => total + countValues(child), 0)
   }
-
-  const json = JSON.stringify(codePoints.slice(0, low).join(''))
-  return { json, bytes: byteLength(json), truncated: true, dropped: 1 }
+  return 1
 }
 
 function fitValue(value: unknown, maxBytes: number): WalkResult | null {
-  if (typeof value === 'string') return fitString(value, maxBytes)
-
   if (Array.isArray(value)) {
     if (maxBytes < 2) return null
     const parts: string[] = []
@@ -58,7 +44,7 @@ function fitValue(value: unknown, maxBytes: number): WalkResult | null {
       const separatorBytes = parts.length === 0 ? 0 : 1
       const child = fitValue(value[index], maxBytes - bytes - separatorBytes)
       if (child === null) {
-        dropped += value.length - index
+        dropped += value.slice(index).reduce((total, omitted) => total + countValues(omitted), 0)
         truncated = true
         break
       }
@@ -67,7 +53,7 @@ function fitValue(value: unknown, maxBytes: number): WalkResult | null {
       bytes += separatorBytes + child.bytes
       dropped += child.dropped
       if (child.truncated) {
-        dropped += value.length - index - 1
+        dropped += value.slice(index + 1).reduce((total, omitted) => total + countValues(omitted), 0)
         truncated = true
         break
       }
@@ -91,7 +77,7 @@ function fitValue(value: unknown, maxBytes: number): WalkResult | null {
       const prefixBytes = byteLength(keyJson) + 1
       const child = fitValue(childValue, maxBytes - bytes - separatorBytes - prefixBytes)
       if (child === null) {
-        dropped += entries.length - index
+        dropped += entries.slice(index).reduce((total, [, omitted]) => total + countValues(omitted), 0)
         truncated = true
         break
       }
@@ -100,7 +86,7 @@ function fitValue(value: unknown, maxBytes: number): WalkResult | null {
       bytes += separatorBytes + prefixBytes + child.bytes
       dropped += child.dropped
       if (child.truncated) {
-        dropped += entries.length - index - 1
+        dropped += entries.slice(index + 1).reduce((total, [, omitted]) => total + countValues(omitted), 0)
         truncated = true
         break
       }
@@ -138,7 +124,7 @@ export function boundData(data: unknown, maxBytes: number): BoundResult {
       truncated: true,
       bytes: byteLength(JSON.stringify(fallback)),
       original_bytes: serializedLength,
-      dropped: 1,
+      dropped: countValues(normalized),
     }
   }
 

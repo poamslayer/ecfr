@@ -69,6 +69,7 @@ for (const op of operations) {
     writeResult(result, {
       output: merged.output,
       json: merged.json === true,
+      pretty: merged.pretty === true,
       environment,
       isTTY: process.stdout.isTTY === true,
       stdout: process.stdout,

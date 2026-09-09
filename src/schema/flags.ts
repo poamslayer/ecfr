@@ -19,7 +19,7 @@ export interface FlagDef {
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')
 const positiveInt = z.coerce.number().int().positive()
-const identifier = (name: 'part' | 'section') => z.string()
+const hardenedIdentifierSchema = (name: 'part' | 'section' | 'under') => z.string()
   .min(1, `Pass a non-empty ${name} identifier.`)
   .max(64, `Pass a ${name} identifier no longer than 64 characters.`)
   .regex(
@@ -28,10 +28,30 @@ const identifier = (name: 'part' | 'section') => z.string()
   )
   .refine(value => !value.includes('..'), `Pass a single ${name} identifier without the traversal sequence "..".`)
 
+export const structureLevels = [
+  'title',
+  'subtitle',
+  'chapter',
+  'subchapter',
+  'part',
+  'subpart',
+  'subject_group',
+  'section',
+  'appendix',
+  'hed1',
+] as const
+export const structureLevelValues = [...structureLevels, 'all'] as const
+
 export const flags = {
   json: {
     name: 'json',
     description: 'Write the JSON envelope to stdout. Alias for --output json; retained for compatibility.',
+    schema: z.boolean().default(false),
+    global: true,
+  },
+  pretty: {
+    name: 'pretty',
+    description: 'Indent the JSON envelope for a human reader. Agents should leave this off; it makes a deep response about 2.3 times larger.',
     schema: z.boolean().default(false),
     global: true,
   },
@@ -79,15 +99,36 @@ export const flags = {
     name: 'part',
     value: '<n>',
     description: 'Part number within the title.',
-    schema: identifier('part'),
+    schema: hardenedIdentifierSchema('part'),
     remediation: 'Run `ecfr structure <title>` to list the parts in a title.',
   },
   section: {
     name: 'section',
     value: '<n>',
     description: 'Section number in full dotted form, e.g. 2002.14.',
-    schema: identifier('section'),
+    schema: hardenedIdentifierSchema('section'),
     remediation: 'Pass the section in full dotted form, such as `--section 2002.14`. Run `ecfr structure <title>` to list sections.',
+  },
+  level: {
+    name: 'level',
+    value: '<type>',
+    description: `Deepest structure type to return: ${structureLevelValues.join(', ')}. Defaults to chapter, or part with --under.`,
+    schema: z.enum(structureLevelValues),
+    remediation: `Pass --level as one of: ${structureLevelValues.join(', ')}.`,
+  },
+  under: {
+    name: 'under',
+    value: '<identifier>',
+    description: 'Return the subtree rooted at this identifier. The shallowest match wins, so `--under 2` finds chapter 2 rather than a part numbered 2 deeper in the tree. Qualify it as `<type>:<identifier>`, such as `chapter:2`, when one level holds several nodes with the same identifier.',
+    schema: z.string()
+      .min(1, 'Pass a non-empty identifier to --under.')
+      .max(80, 'Pass an identifier to --under no longer than 80 characters.')
+      .regex(
+        /^(?:[a-z_]+:)?[A-Za-z0-9][A-Za-z0-9.\-()]*$/,
+        'Pass an identifier to --under, optionally qualified as `<type>:<identifier>` such as `chapter:2`.',
+      )
+      .refine(value => !value.includes('..'), 'Pass a single identifier to --under without the traversal sequence "..".'),
+    remediation: 'Pass an identifier shown by `ecfr structure <title>`, qualified as `<type>:<identifier>` if one identifier appears more than once at the same level.',
   },
   agency: {
     name: 'agency',

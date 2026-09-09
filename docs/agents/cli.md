@@ -55,17 +55,24 @@ Everything at the paths in `untrusted` came from ecfr.gov. On `read` that is `["
 
 ## Bounded responses
 
-`data` is capped at 262144 serialized bytes by default. When the bound cuts a response the envelope carries a `TRUNCATED` warning whose details give `original_bytes`, `bytes`, and `max_bytes`, and the answer is partial. Check for it on every run before treating a response as complete. `ecfr structure 32` is 1.18 MB and truncates by default.
+`data` is capped at 262144 serialized bytes by default. When the bound cuts a response the envelope carries a `TRUNCATED` warning whose details give `original_bytes`, `bytes`, and `max_bytes`, and the answer is partial. Check for it on every run before treating a response as complete.
 
 ```bash
-ecfr structure 32 | jq '[.warnings[] | select(.code == "TRUNCATED")] | length'
+ecfr structure 32 | jq '{warnings, structure: .data}'
 ```
 
-`--max-bytes <n>` raises the bound and `--max-bytes 0` disables it. The better fix is usually `--fields`, a comma-separated list of top-level field names of `data`, accepted by every operation except `capabilities`. `ecfr structure 32 --fields identifier,label,type` returns complete data with no truncation. An unknown name exits 2 and the error lists the names that are available.
+`structure` controls size by narrowing the question before the bound applies. It defaults to `--level chapter`; a node whose deeper children were pruned carries `withheld_children` with the exact immediate count. Pass one unique identifier with `--under`; that narrows Data to its subtree and changes the default level to `part`. Then request a finer named level only when needed. `--level all` asks for the old whole tree and may still exceed the bound.
+
+```bash
+ecfr structure 32
+ecfr structure 32 --under XX
+```
+
+`--max-bytes <n>` raises the bound and `--max-bytes 0` disables it. Another useful narrowing tool is `--fields`, a comma-separated list of top-level field names of `data`, accepted by every operation except `capabilities`. An unknown name exits 2 and the error lists the names that are available.
 
 ## Identifiers
 
-`--part` and `--section` take 1 to 64 characters, start with a letter or digit, and contain only letters, digits, dots, hyphens, and parentheses, with no `..`. Parentheses are allowed because Title 26 has sections like `1.1031(a)-1`. A traversal sequence, an embedded `?` or `#`, a percent sequence, or a control character exits 2. It is never encoded and sent upstream, and never repaired.
+`--part`, `--section`, and `structure --under` take 1 to 64 characters, start with a letter or digit, and contain only letters, digits, dots, hyphens, and parentheses, with no `..`. Parentheses are allowed because Title 26 has sections like `1.1031(a)-1`. A traversal sequence, an embedded `?` or `#`, a percent sequence, or a control character exits 2. It is never encoded and sent upstream, and never repaired.
 
 ## Reading by citation
 

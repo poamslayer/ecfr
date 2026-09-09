@@ -48,6 +48,7 @@ function render(
   options: {
     output?: unknown
     json?: boolean
+    pretty?: boolean
     isTTY?: boolean
     env?: Record<string, string | undefined>
   } = {},
@@ -58,6 +59,7 @@ function render(
   writeResult(result, {
     output: options.output,
     json: options.json ?? false,
+    pretty: options.pretty ?? false,
     environment,
     isTTY: options.isTTY ?? false,
     stdout: { write: chunk => stdout.push(String(chunk)) },
@@ -82,6 +84,15 @@ describe('writeResult', () => {
   it('--output json writes the Envelope', () => {
     const rendered = render(successfulResult(), { output: 'json' })
     expect(JSON.parse(rendered.stdout)).toEqual(successfulResult().envelope)
+    expect(rendered.stdout).toBe(`${JSON.stringify(successfulResult().envelope)}\n`)
+  })
+
+  it('--pretty indents the JSON Envelope without changing its value', () => {
+    const compact = render(successfulResult(), { output: 'json' })
+    const pretty = render(successfulResult(), { output: 'json', pretty: true })
+
+    expect(pretty.stdout).toBe(`${JSON.stringify(successfulResult().envelope, null, 2)}\n`)
+    expect(JSON.parse(pretty.stdout)).toEqual(JSON.parse(compact.stdout))
   })
 
   it('--json still selects json', () => {

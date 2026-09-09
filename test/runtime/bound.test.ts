@@ -37,15 +37,28 @@ describe('boundData', () => {
     expect(result.dropped).toBe(2)
   })
 
-  it('cuts a long string only at UTF-8 code point boundaries', () => {
-    const result = boundData('start—😀—finish', bytes('start—😀'))
-    const output = result.data as string
+  it('drops an oversized string whole and never emits a proper prefix', () => {
+    const input = 'start—😀—finish'
+    const result = boundData({ first: 'kept', second: input }, bytes({ first: 'kept' }))
 
-    expect(output).toBe('start—😀')
+    expect(result.data).toEqual({ first: 'kept' })
     expect(result.truncated).toBe(true)
     expect(result.dropped).toBe(1)
-    expect(output).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u)
-    expect(new TextDecoder('utf-8', { fatal: true }).decode(new TextEncoder().encode(output))).toBe(output)
+    const returnedStrings = JSON.stringify(result.data).match(/"(?:[^"\\]|\\.)*"/g) ?? []
+    expect(returnedStrings.every(value => !input.startsWith(JSON.parse(value) as string))).toBe(true)
+  })
+
+  it('counts every value inside subtrees dropped whole', () => {
+    const data = {
+      kept: 1,
+      omitted: { alpha: 2, nested: [3, 4] },
+      last: 5,
+    }
+    const result = boundData(data, bytes({ kept: 1 }))
+
+    expect(result.data).toEqual({ kept: 1 })
+    // omitted object + alpha + nested array + its two entries + last
+    expect(result.dropped).toBe(6)
   })
 
   it('treats maxBytes 0 as an unbounded passthrough', () => {

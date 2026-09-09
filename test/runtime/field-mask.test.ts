@@ -70,7 +70,7 @@ describe('field masks', () => {
   })
 
   it('still bounds an unmasked response and warns that it was truncated', async () => {
-    const result = await runOperation(structure, structureInput, { fetch: fixtureFetch() })
+    const result = await runOperation(structure, { ...structureInput, level: 'all' }, { fetch: fixtureFetch() })
 
     if (!result.envelope.ok) throw new Error('expected success')
     expect(result.envelope.warnings).toContainEqual(expect.objectContaining({ code: 'TRUNCATED' }))
@@ -92,7 +92,12 @@ describe('field masks', () => {
     // `children[0]` is invalid and is masked away. The mismatch Warning proves the schema
     // check ran on the unmasked payload, which is what keeps OUTPUT_SCHEMA_MISMATCH honest.
     const titles = { titles: [{ number: 32, latest_issue_date: '2026-08-17', latest_amended_on: null, up_to_date_as_of: null }] }
-    const tree = { identifier: 'title-32', label: 'Title 32', children: [{ identifier: 5 }] }
+    const tree = {
+      identifier: 'title-32',
+      label: 'Title 32',
+      type: 'title',
+      children: [{ identifier: 5, label: 'Chapter I', type: 'chapter' }],
+    }
     const fetch = vi.fn(async (input: string | URL | Request) => new Response(
       JSON.stringify(String(input).endsWith('/titles') ? titles : tree),
       { headers: { 'content-type': 'application/json' } },
